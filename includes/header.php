@@ -11,14 +11,14 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/water_delivery/assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="/water_delivery/index.php">
+        <a class="navbar-brand" href="index.php">
             <i class="fa-solid fa-droplet"></i> AquaFlow
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -34,15 +34,15 @@
                 </li>
                 <?php if(isset($_SESSION['user_id'])): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/water_delivery/my_orders.php">My Orders</a>
+                        <a class="nav-link" href="my_orders.php">My Orders</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-bold text-primary" href="/water_delivery/profile.php">
+                        <a class="nav-link fw-bold text-primary" href="profile.php">
                              <i class="fa-solid fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['name']); ?>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-outline-danger ms-2 btn-sm" href="/water_delivery/logout.php">Logout</a>
+                        <a class="btn btn-outline-danger ms-2 btn-sm" href="logout.php">Logout</a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item ms-2">

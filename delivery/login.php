@@ -13,7 +13,7 @@ if(isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <title>Delivery Partner Login - AquaFlow</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/water_delivery/assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
         body {
             background-color: #f0f2f5;
@@ -37,7 +37,7 @@ if(isset($_SESSION['user_id'])) {
         <h3 class="fw-bold text-success">Delivery Partner</h3>
         <p class="text-muted">Login to view tasks</p>
     </div>
-    <form action="/water_delivery/auth_action.php" method="POST">
+    <form action="auth_action.php" method="POST">
         <input type="hidden" name="action" value="login">
         <div class="mb-3">
             <label class="form-label">Mobile Number</label>
@@ -49,7 +49,7 @@ if(isset($_SESSION['user_id'])) {
         </div>
         <button type="submit" class="btn btn-success w-100 mb-3" style="border-radius: 50px;">Login</button>
         <div class="text-center">
-            <a href="/water_delivery/index.php" class="text-muted small">Back to Home</a>
+            <a href="index.php" class="text-muted small">Back to Home</a>
         </div>
     </form>
 </div>
