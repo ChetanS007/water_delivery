@@ -3,125 +3,105 @@ header('Content-Type: application/json');
 require_once '../../includes/db.php';
 
 $action = $_GET['action'] ?? '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
+    $action = $_POST['action'] ?? ''; 
 }
 
 switch($action) {
-    case 'fetch_orders':
-        fetchOrders($pdo);
+    case 'fetch_todays_deliveries':
+        fetchTodaysDeliveries($pdo);
         break;
-    case 'fetch_delivery_boys':
-        fetchDeliveryBoys($pdo);
-        break;
-    case 'accept_order':
-        acceptOrder($pdo);
-        break;
-    case 'assign_order':
-        assignOrder($pdo);
+    case 'fetch_history':
+        fetchHistory($pdo);
         break;
     default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action']);
-        break;
+        echo json_encode(['success' => false, 'message' => 'Invalid action ' . $action]);
 }
 
-function fetchOrders($pdo) {
-    $type = $_GET['type'] ?? 'all';
-    $search = $_GET['search'] ?? '';
-    
-    $where = "1=1";
-    $params = [];
-
-    if ($type === 'today') {
-        $where .= " AND DATE(o.created_at) = CURDATE()";
-    } elseif ($type === 'delivered') {
-        $where .= " AND o.status = 'Delivered'";
-        
-        $start_date = $_GET['start_date'] ?? '';
-        $end_date = $_GET['end_date'] ?? '';
-
-        $deliveredSubquery = "(SELECT delivered_at FROM delivery_assignments da 
-                               WHERE da.order_id = o.id AND da.delivery_status = 'Delivered' 
-                               ORDER BY da.delivered_at DESC LIMIT 1)";
-
-        if ($start_date) {
-            $where .= " AND DATE($deliveredSubquery) >= ?";
-            $params[] = $start_date;
-        }
-        if ($end_date) {
-            $where .= " AND DATE($deliveredSubquery) <= ?";
-            $params[] = $end_date;
-        }
-    }
-
-    if ($search) {
-        $where .= " AND (u.full_name LIKE ? OR u.mobile LIKE ? OR o.id LIKE ?)";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-    }
-
-    $sql = "SELECT o.*, u.full_name, u.mobile, u.address,
-            (SELECT full_name FROM delivery_boys db 
-             JOIN delivery_assignments da ON da.delivery_boy_id = db.id 
-             WHERE da.order_id = o.id ORDER BY da.assigned_at DESC LIMIT 1) as delivery_boy_name,
-            (SELECT delivered_at FROM delivery_assignments da 
-             WHERE da.order_id = o.id AND da.delivery_status = 'Delivered' 
-             ORDER BY da.delivered_at DESC LIMIT 1) as delivered_at
-            FROM orders o 
-            JOIN users u ON o.user_id = u.id 
-            WHERE $where 
-            ORDER BY o.created_at DESC";
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo json_encode(['success' => true, 'data' => $orders]);
-}
-
-function fetchDeliveryBoys($pdo) {
-    $stmt = $pdo->query("SELECT id, full_name FROM delivery_boys WHERE status = 1");
-    echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
-}
-
-function acceptOrder($pdo) {
-    $order_id = $_POST['order_id'];
-    
-    // Authorization check could be added here
-    
-    $stmt = $pdo->prepare("UPDATE orders SET status = 'Accepted' WHERE id = ? AND status = 'Pending'");
-    if ($stmt->execute([$order_id])) {
-        if ($stmt->rowCount() > 0) {
-            echo json_encode(['success' => true, 'message' => 'Order accepted successfully']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Order not in pending status or already updated']);
-        }
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Database error']);
-    }
-}
-
-function assignOrder($pdo) {
-    $order_id = $_POST['order_id'];
-    $boy_id = $_POST['delivery_boy_id'];
-
+function fetchTodaysDeliveries($pdo) {
     try {
-        $pdo->beginTransaction();
+        // 1. Fetch all active subscriptions (Approved or Assigned)
+        // Join with products and users
+        $sql = "SELECT o.id as sub_id, o.user_id, o.order_type, o.custom_days, o.created_at,
+                       u.full_name as customer_name, u.mobile, u.address,
+                       da.delivery_boy_id, db.full_name as delivery_boy_name
+                FROM orders o
+                JOIN users u ON u.id = o.user_id
+                LEFT JOIN delivery_assignments da ON o.id = da.order_id
+                LEFT JOIN delivery_boys db ON da.delivery_boy_id = db.id
+                WHERE o.status IN ('Approved', 'Assigned')";
 
-        // 1. Update Order Status
-        $stmt = $pdo->prepare("UPDATE orders SET status = 'Assigned' WHERE id = ?");
-        $stmt->execute([$order_id]);
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        $subscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $todaysDeliveries = [];
+        $currentDate = new DateTime();
+        $todayStr = $currentDate->format('Y-m-d');
+        $todayDay = $currentDate->format('D'); // Mon, Tue, etc.
 
-        // 2. Create Assignment
-        $stmt = $pdo->prepare("INSERT INTO delivery_assignments (order_id, delivery_boy_id, delivery_status) VALUES (?, ?, 'Pending')");
-        $stmt->execute([$order_id, $boy_id]);
+        foreach($subscriptions as $sub) {
+            $isDue = false;
+            
+            // Logic for Due Date
+            if ($sub['order_type'] === 'Daily') {
+                $isDue = true;
+            } elseif ($sub['order_type'] === 'Alternate') {
+                // Calculate days since start
+                $start = new DateTime($sub['created_at']);
+                $diff = $start->diff($currentDate)->days;
+                // Basic Alternate Logic: Every 2 days
+                if ($diff % 2 == 0) {
+                    $isDue = true;
+                }
+            } elseif ($sub['order_type'] === 'Custom') {
+                $days = json_decode($sub['custom_days'] ?? '[]', true);
+                if (is_array($days) && in_array($todayDay, $days)) {
+                    $isDue = true;
+                }
+            } elseif ($sub['order_type'] === 'Weekly') {
+                $start = new DateTime($sub['created_at']);
+                if ($start->format('D') === $todayDay) {
+                    $isDue = true;
+                }
+            }
 
-        $pdo->commit();
-        echo json_encode(['success' => true, 'message' => 'Order assigned to delivery boy']);
+            if ($isDue) {
+                // Check if already logged in daily_deliveries
+                $check = $pdo->prepare("SELECT status, delivered_at FROM daily_deliveries WHERE subscription_id = ? AND delivery_date = ?");
+                $check->execute([$sub['sub_id'], $todayStr]);
+                $result = $check->fetch(PDO::FETCH_ASSOC); 
+
+                $sub['today_status'] = $result ? $result['status'] : 'Pending';
+                $sub['delivered_at'] = $result ? $result['delivered_at'] : null;
+                $todaysDeliveries[] = $sub;
+            }
+        }
+
+        echo json_encode(['success' => true, 'data' => $todaysDeliveries]);
+
     } catch (Exception $e) {
-        $pdo->rollBack();
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
+function fetchHistory($pdo) {
+    try {
+        $sql = "SELECT dd.*, u.full_name as customer_name, db.full_name as delivery_boy_name
+                FROM daily_deliveries dd
+                JOIN orders o ON dd.subscription_id = o.id
+                JOIN users u ON o.user_id = u.id
+                LEFT JOIN delivery_boys db ON dd.delivery_boy_id = db.id
+                ORDER BY dd.delivery_date DESC, dd.created_at DESC";
+                
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 ?>

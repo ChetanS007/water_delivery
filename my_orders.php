@@ -15,7 +15,7 @@ $orders = $stmt->fetchAll();
 
 <div class="container py-5" style="margin-top: 80px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">My Orders</h2>
+        <h2 class="fw-bold">My Subscriptions</h2>
         <a href="index.php" class="btn btn-outline-primary">
             <i class="fa-solid fa-arrow-left"></i> Back to Home
         </a>

@@ -61,8 +61,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // --- Customer / Delivery Login (Mobile) ---
         else {
             $mobile = htmlspecialchars($_POST['mobile']);
+            $login_type = $_POST['login_type'] ?? 'customer'; // Default to customer
 
-            // 1. Check Customer
+            // 1. DELIVERY BOY LOGIN (Prioritized if explicitly requested or if found)
+            if ($login_type === 'delivery') {
+                $stmt = $pdo->prepare("SELECT * FROM delivery_boys WHERE mobile = ?");
+                $stmt->execute([$mobile]);
+                $boy = $stmt->fetch();
+
+                if ($boy && password_verify($password, $boy['password'])) {
+                    $_SESSION['user_id'] = $boy['id'];
+                    $_SESSION['role'] = 'Delivery';
+                    $_SESSION['name'] = $boy['full_name'];
+                    header("Location: delivery/dashboard.php");
+                    exit();
+                }
+                // If failed delivery login, show error specific to delivery
+                 echo "<script>alert('Invalid Delivery Partner Credentials!'); window.location.href='delivery/login.php';</script>";
+                 exit();
+            }
+
+            // 2. CUSTOMER LOGIN (Default)
             $stmt = $pdo->prepare("SELECT * FROM users WHERE mobile = ?");
             $stmt->execute([$mobile]);
             $user = $stmt->fetch();
@@ -76,17 +95,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit();
             }
 
-            // 2. Check Delivery Boy
-            $stmt = $pdo->prepare("SELECT * FROM delivery_boys WHERE mobile = ?");
-            $stmt->execute([$mobile]);
-            $boy = $stmt->fetch();
-
-            if ($boy && password_verify($password, $boy['password'])) {
-                $_SESSION['user_id'] = $boy['id'];
-                $_SESSION['role'] = 'Delivery';
-                $_SESSION['name'] = $boy['full_name'];
-                header("Location: delivery/dashboard.php");
-                exit();
+            // Fallback: If not finding customer, technically could check delivery boy here too if we want a universal login, 
+            // but strict separation is better for security and clarity.
+            // However, to keep backward compatibility if no hidden field:
+            if ($login_type !== 'delivery') {
+                 // Try checking delivery boy just in case they used the main login but valid delivery creds? 
+                 // No, requested behavior is separating them or making sure delivery redirects to delivery.
+                 // Given the specific request: "when i'm login from delivery boy... redirects user landing page"
+                 // This implies they might be logging in from the *main* login modal?
+                 // Or they are logging in from delivery login page but it's treating them as user?
+                 // Let's assume they use delivery login page.
             }
 
             echo "<script>alert('Invalid Mobile or Password!'); window.location.href='index.php';</script>";

@@ -20,7 +20,7 @@ $role = $_SESSION['role'] ?? 'Admin';
             <a href="users.php" class="sidebar-link <?php echo $current_page == 'users.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-users"></i> Users / Customers
             </a>
-        </li>
+        </li> 
 
         <li class="sidebar-item">
             <a href="delivery_boys.php" class="sidebar-link <?php echo $current_page == 'delivery_boys.php' ? 'active' : ''; ?>">
@@ -41,10 +41,22 @@ $role = $_SESSION['role'] ?? 'Admin';
                 <i class="fa-solid fa-box-open"></i> Products
             </a>
         </li>
+ 
+        <li class="sidebar-item">
+            <a href="subscriptions.php" class="sidebar-link <?php echo $current_page == 'subscriptions.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-bell"></i> Subscription Requests
+            </a>
+        </li>
 
         <li class="sidebar-item">
             <a href="orders.php" class="sidebar-link <?php echo $current_page == 'orders.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-clipboard-list"></i> Order History
+            </a>
+        </li>
+
+        <li class="sidebar-item">
+            <a href="bills.php" class="sidebar-link <?php echo $current_page == 'bills.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Bill
             </a>
         </li>
 

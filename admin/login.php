@@ -15,18 +15,28 @@ if(isset($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/water_delivery/assets/css/style.css">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
         body {
-            background-color: var(--dark-bg);
+            background: linear-gradient(rgba(14, 58, 102, 0.8), rgba(14, 58, 102, 0.8)), url('/water_delivery/assets/img/hero-water.jpg'); /* Adjusted path if needed, usually absolute from root works better or relative */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .login-card {
             max-width: 400px;
             width: 100%;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
         }
     </style>
 </head>

@@ -15,8 +15,11 @@ if(isset($_SESSION['user_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
+        html, body {
+            height: 100%;
+        }
         body {
-            background-color: #f0f2f5;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../assets/img/hero-water.jpg') no-repeat center center/cover;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -24,7 +27,8 @@ if(isset($_SESSION['user_id'])) {
         .login-card {
             max-width: 400px;
             width: 100%;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
             border-radius: 20px;
             padding: 30px;
         }
@@ -37,8 +41,9 @@ if(isset($_SESSION['user_id'])) {
         <h3 class="fw-bold text-success">Delivery Partner</h3>
         <p class="text-muted">Login to view tasks</p>
     </div>
-    <form action="auth_action.php" method="POST">
+    <form action="../auth_action.php" method="POST">
         <input type="hidden" name="action" value="login">
+        <input type="hidden" name="login_type" value="delivery">
         <div class="mb-3">
             <label class="form-label">Mobile Number</label>
             <input type="text" name="mobile" class="form-control" required placeholder="Mobile">

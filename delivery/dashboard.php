@@ -8,17 +8,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Delivery') {
 
 $boy_id = $_SESSION['user_id'];
 
-// Get Assigned Deliveries
-$sql = "SELECT da.id as assignment_id, o.id as order_id, u.full_name, u.address, u.latitude, u.longitude, u.qr_code, o.total_amount, da.delivery_status 
-        FROM delivery_assignments da
-        JOIN orders o ON da.order_id = o.id
-        JOIN users u ON o.user_id = u.id
-        WHERE da.delivery_boy_id = ? AND da.delivery_status = 'Pending'
-        ORDER BY da.assigned_at DESC";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$boy_id]);
-$deliveries = $stmt->fetchAll();
+// Get Assigned Deliveries (Initial Empty State)
+$deliveries = []; 
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,10 +41,35 @@ $deliveries = $stmt->fetchAll();
 
 <nav class="navbar navbar-dark bg-success mb-4">
     <div class="container">
-        <span class="navbar-brand"><i class="fa-solid fa-motorcycle me-2"></i>Delivery Partner</span>
+        <span class="navbar-brand">
+            <i class="fa-solid fa-motorcycle me-2"></i>
+            Welcome, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Partner'); ?>
+        </span>
         <a href="/water_delivery/logout.php" class="btn btn-sm btn-outline-light">Logout</a>
     </div>
 </nav>
+
+<!-- Stats -->
+    <div class="row g-3 mb-4 px-2 text-center">
+        <div class="col-4">
+            <div class="card bg-primary text-white border-0 shadow-sm py-2">
+                <h6 class="small mb-1">Total Cans </h6>
+                <h3 class="fw-bold mb-0" id="statTotal">0</h3>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card bg-success text-white border-0 shadow-sm py-2">
+                <h6 class="small mb-1">Delivered</h6>
+                <h3 class="fw-bold mb-0" id="statDelivered">0</h3>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card bg-secondary text-white border-0 shadow-sm py-2">
+                <h6 class="small mb-1">Remaining </h6>
+                <h3 class="fw-bold mb-0" id="statRemaining">0</h3>
+            </div>
+        </div>
+    </div>
 
 <div class="container pb-5">
     
@@ -67,50 +83,25 @@ $deliveries = $stmt->fetchAll();
         </li>
     </ul>
 
+     
     <div class="tab-content">
         
         <!-- List View -->
         <div class="tab-pane fade show active" id="listView">
+            
+
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Assigned Deliveries (<span id="countDisplay"><?php echo count($deliveries); ?></span>)</h5>
+                <h5 class="mb-0">Today's Dispatch List (<span id="countDisplay"><?php echo count($deliveries); ?></span>)</h5>
                 <small class="text-muted" id="locStatus">Getting location...</small>
             </div>
 
             <div class="row g-3" id="deliveryList">
-                <?php foreach ($deliveries as $item): ?>
-                <div class="col-md-6 col-lg-4 delivery-item" 
-                     data-id="<?php echo $item['assignment_id']; ?>"
-                     data-lat="<?php echo $item['latitude']; ?>" 
-                     data-lng="<?php echo $item['longitude']; ?>"
-                     data-name="<?php echo htmlspecialchars($item['full_name']); ?>">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="fw-bold text-dark"><?php echo htmlspecialchars($item['full_name']); ?></h6>
-                                <span class="badge bg-primary rounded-pill">₹<?php echo $item['total_amount']; ?></span>
-                            </div>
-                            <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1"></i> <?php echo htmlspecialchars($item['address']); ?></p>
-                            
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        onclick="startNavigation(<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>, '<?php echo addslashes($item['full_name']); ?>')">
-                                   <i class="fa-solid fa-diamond-turn-right me-1"></i> Navigate
-                                </button>
-                                <button class="btn btn-success btn-sm" 
-                                        onclick="startScan('<?php echo $item['qr_code']; ?>', <?php echo $item['assignment_id']; ?>)">
-                                    <i class="fa-solid fa-qrcode me-1"></i> Scan & Deliver
-                                </button>
-                            </div>
-                        </div>
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
+                    <p class="text-muted mt-2">Loading Assigned Deliveries...</p>
                 </div>
-                <?php endforeach; ?>
-                
-                <?php if(count($deliveries) == 0): ?>
-                    <div class="col-12 text-center text-muted mt-5">
-                        <p>No pending deliveries assigned.</p>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -159,87 +150,85 @@ $deliveries = $stmt->fetchAll();
     let currentLat, currentLng;
     let sortedOrders = []; 
 
+    let lastDeliveryData = null;
+
     document.addEventListener('DOMContentLoaded', () => {
-        initApp();
-    });
-
-    function initApp() {
+        // initApp(); // Removed undefined function
+        fetchDeliveries(); // Initial Load
+        
+        // Get Location
         if (navigator.geolocation) {
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            };
-
-            navigator.geolocation.getCurrentPosition(
+             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     currentLat = pos.coords.latitude;
                     currentLng = pos.coords.longitude;
-                    document.getElementById('locStatus').innerText = "Location active";
-                    
-                    optimizeRoute(currentLat, currentLng);
-                }, 
-                (err) => {
-                    console.warn("High accuracy failed, trying low accuracy...", err);
-                    
-                    // Fallback to Low Accuracy
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            currentLat = pos.coords.latitude;
-                            currentLng = pos.coords.longitude;
-                            document.getElementById('locStatus').innerText = "Location active (Low Accuracy)";
-                            optimizeRoute(currentLat, currentLng);
-                        },
-                        (err2) => {
-                            console.error("Location error:", err2);
-                            let msg = "Location access unavailable.";
-                            
-                            if (err2.code === 1) msg = "Location permission denied.";
-                            else if (err2.code === 2) msg = "Position unavailable.";
-                            else if (err2.code === 3) msg = "Location request timed out.";
-                            
-                            document.getElementById('locStatus').innerText = msg;
-                            
-                            // Only alert if specifically denied
-                            if (err2.code === 1) {
-                                alert("Please enable location services in your browser settings to use navigation features.");
-                            }
-                            
-                            // Default Fallback for Demo/Testing
-                            currentLat = 20.5937; 
-                            currentLng = 78.9629;
-                            initMap(currentLat, currentLng, []); 
-                        },
-                        { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }
-                    );
+                    document.getElementById('locStatus').innerText = "Location Active";
+                    // Re-render to show distances if data already loaded
+                    if(sortedOrders.length > 0) renderDeliveries(sortedOrders);
                 },
-                options
+                (err) => {
+                    document.getElementById('locStatus').innerText = "Location Denied";
+                    console.warn("Location access denied or failed.");
+                }
             );
         } else {
             document.getElementById('locStatus').innerText = "Geolocation not supported";
         }
+        
+        // Polling (No Full Page Reload)
+        setInterval(() => {
+            if(!html5QrcodeScanner) { 
+                fetchDeliveries();
+            }
+        }, 10000);
+    });
+
+    function fetchDeliveries() {
+        const container = document.getElementById('deliveryList');
+        
+        fetch('api/fetch_deliveries.php')
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                const currentDataStr = JSON.stringify(res.data);
+                if(lastDeliveryData === currentDataStr) return; // No Change
+                
+                lastDeliveryData = currentDataStr;
+                renderDeliveries(res.data);
+                
+                // Update Stats
+                if(res.stats) {
+                    document.getElementById('statTotal').innerText = res.stats.total_cans;
+                    document.getElementById('statDelivered').innerText = res.stats.delivered_cans;
+                    document.getElementById('statRemaining').innerText = res.stats.remaining_cans;
+                }
+
+                // Update counter
+                document.getElementById('countDisplay').innerText = res.data.length;
+            } else {
+                container.innerHTML = `<div class="col-12 text-center text-danger mt-5"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i><p>${res.message}</p></div>`;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            container.innerHTML = `<div class="col-12 text-center text-danger mt-5"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i><p>Network Error: Could not load data.</p></div>`;
+        });
     }
 
-    function optimizeRoute(startLat, startLng) {
-        const container = document.getElementById('deliveryList');
-        let items = Array.from(container.getElementsByClassName('delivery-item'));
-        
-        let sortedItems = [];
+    // --- SORTING LOGIC ---
+    function sortDeliveriesByDistance(items, startLat, startLng) {
+        let sorted = [];
         let currentPos = { lat: startLat, lng: startLng };
-        let remaining = items.map(item => ({
-            element: item,
-            lat: parseFloat(item.getAttribute('data-lat')),
-            lng: parseFloat(item.getAttribute('data-lng')),
-            id: item.getAttribute('data-id'),
-            name: item.getAttribute('data-name')
-        }));
+        // Clone items to avoid mutating original array mid-loop
+        let remaining = [...items];
 
         while (remaining.length > 0) {
             let nearestIndex = -1;
             let minDist = Infinity;
 
             for (let i = 0; i < remaining.length; i++) {
-                const d = getDistance(currentPos.lat, currentPos.lng, remaining[i].lat, remaining[i].lng);
+                const item = remaining[i];
+                const d = getDistance(currentPos.lat, currentPos.lng, parseFloat(item.latitude), parseFloat(item.longitude));
                 if (d < minDist) {
                     minDist = d;
                     nearestIndex = i;
@@ -248,18 +237,79 @@ $deliveries = $stmt->fetchAll();
 
             if (nearestIndex !== -1) {
                 const nearest = remaining[nearestIndex];
-                sortedItems.push(nearest);
-                currentPos = { lat: nearest.lat, lng: nearest.lng };
+                sorted.push(nearest);
+                currentPos = { lat: parseFloat(nearest.latitude), lng: parseFloat(nearest.longitude) };
                 remaining.splice(nearestIndex, 1);
             }
         }
-
-        container.innerHTML = '';
-        sortedItems.forEach(obj => container.appendChild(obj.element));
-        sortedOrders = sortedItems;
+        return sorted;
     }
 
-    // Initialize Map for Overview (All Orders)
+    function renderDeliveries(items) {
+        const container = document.getElementById('deliveryList');
+        container.innerHTML = '';
+
+        // Show Today's Dispatch List (Unsorted)
+        let displayItems = items;
+        sortedOrders = items;
+
+        if(displayItems.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted mt-5"><p>No order assigned.</p></div>';
+            return;
+        }
+
+        displayItems.forEach((item, index) => {
+             // Calculate distance purely for informational display if desired, 
+             // but user requested removing 'nearest' condition, implies logic change.
+             // We can keep the badge as "X km away" but not sort by it.
+             let distStr = "";
+             if (currentLat && currentLng) {
+                 const d = getDistance(currentLat, currentLng, parseFloat(item.latitude), parseFloat(item.longitude));
+                 distStr = `<span class="badge bg-secondary ms-2">${d.toFixed(1)} km</span>`;
+             }
+
+            const html = `
+                <div class="col-md-6 col-lg-4 delivery-item" 
+                     data-id="${item.assignment_id}">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">${index + 1}. ${item.full_name}</h6>
+                                    <small class="text-muted">${item.product_name} x ${item.quantity}</small>
+                                </div>
+                                ${distStr}
+                            </div>
+                            
+                            <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1"></i> ${item.address}</p>
+                            
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="startNavigation(${item.latitude}, ${item.longitude}, '${item.full_name.replace(/'/g, "\\'")}')">
+                                   <i class="fa-solid fa-diamond-turn-right me-1"></i> Navigate
+                                </button>
+                                <button class="btn btn-success btn-sm" 
+                                        onclick="startScan('${item.qr_code}', ${item.assignment_id})">
+                                    <i class="fa-solid fa-qrcode me-1"></i> Scan & Deliver
+                                </button>
+                                <button class="btn btn-primary btn-sm" 
+                                        onclick="completeDelivery(${item.assignment_id})">
+                                    <i class="fa-solid fa-check me-1"></i> Delivered
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+        
+        // Update map if it's already open (optional, but good practice)
+        if(map && document.getElementById('mapView').classList.contains('active')) {
+             initMap(currentLat, currentLng, sortedOrders);
+        }
+    }
+
     function initMap(myLat, myLng, orders) {
         if (map) {
             map.remove();
@@ -273,114 +323,56 @@ $deliveries = $stmt->fetchAll();
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        if (!myLat) return;
+        if (!myLat || orders.length === 0) return;
 
-        // My Location
-        const myIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
+        // Prepare waypoints: Start (My Loc) -> Order 1 -> Order 2 ...
+        let waypoints = [L.latLng(myLat, myLng)];
+        orders.forEach(o => {
+            waypoints.push(L.latLng(parseFloat(o.latitude), parseFloat(o.longitude)));
         });
 
-        L.marker([myLat, myLng], {icon: myIcon}).addTo(map)
-            .bindPopup("<b>You are here</b>").openPopup();
-
-        // Orders
-        const orderIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-        });
-
-        const routePoints = [[myLat, myLng]];
-
-        orders.forEach((o, index) => {
-            L.marker([o.lat, o.lng], {icon: orderIcon}).addTo(map)
-                .bindPopup(`<b>${index + 1}. ${o.name}</b>`);
-            routePoints.push([o.lat, o.lng]);
-        });
-
-        if (orders.length > 0) {
-            L.polyline(routePoints, {color: 'blue', weight: 4, opacity: 0.7, dashArray: '10, 10'}).addTo(map);
-            const bounds = L.latLngBounds(routePoints);
-            map.fitBounds(bounds, {padding: [50, 50]});
-        }
-    }
-
-    // Triggered when clicking "Map View" tab directly
-    function showOverviewMap() {
-        setTimeout(() => {
-            initMap(currentLat, currentLng, sortedOrders);
-            document.getElementById('mapInfo').innerHTML = '<i class="fa-solid fa-info-circle me-1"></i> Overview of all assigned deliveries sorted by distance.';
-        }, 200);
-    }
-
-    function resetOverview() {
-        // Just a placeholder if needed when switching back to list
-    }
-
-    function invalidateMap() {
-        setTimeout(() => { if(map) map.invalidateSize(); }, 200);
-    }
-
-    // Start Individual Navigation
-    function startNavigation(destLat, destLng, destName) {
-        if (!currentLat || !currentLng) {
-            alert("Waiting for current location...");
-            return;
-        }
-
-        // Switch to map tab
-        document.getElementById('map-tab').click();
-        
-        // Wait for tab switch
-        setTimeout(() => {
-            if (map) {
-                map.remove();
-                map = null;
-            }
-
-            map = L.map('map');
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-
-            // Routing Control
-            routingControl = L.Routing.control({
-                waypoints: [
-                    L.latLng(currentLat, currentLng),
-                    L.latLng(destLat, destLng)
-                ],
-                routeWhileDragging: false,
-                geocoder: L.Control.Geocoder ? L.Control.Geocoder.nominatim() : null,
-                createMarker: function(i, wp, nWps) {
-                    let iconUrl = i === 0 
-                        ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png'
-                        : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png';
-                    
-                    return L.marker(wp.latLng, {
-                        icon: L.icon({
-                            iconUrl: iconUrl,
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34],
-                            shadowSize: [41, 41]
-                        })
-                    }).bindPopup(i === 0 ? "<b>Start:</b> You" : `<b>End:</b> ${destName}`);
+        // Use Routing Machine to draw the full route
+        L.Routing.control({
+            waypoints: waypoints,
+             lineOptions: {
+                styles: [{color: 'blue', opacity: 0.6, weight: 4}]
+            },
+            createMarker: function(i, wp, nWps) {
+                let iconUrl, popupText;
+                if (i === 0) {
+                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png';
+                    popupText = "<b>Start:</b> You";
+                } else {
+                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png';
+                    popupText = `<b>${i}.</b> ${orders[i-1].full_name}`; // i-1 because 0 is start
                 }
-            }).addTo(map);
 
-            document.getElementById('mapInfo').innerHTML = `<i class="fa-solid fa-diamond-turn-right me-1"></i> Navigating to <b>${destName}</b>. Follow the route on the map.`;
-
-        }, 300);
+                return L.marker(wp.latLng, {
+                    icon: L.icon({
+                        iconUrl: iconUrl,
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).bindPopup(popupText);
+            },
+            addWaypoints: false,
+            draggableWaypoints: false,
+            routeWhileDragging: false,
+            show: false // Hide text instructions to save space
+        }).addTo(map);
+    }
+    
+    function optimizeRoute(lat, lng) {
+        // Rerender to sort
+        // We need to fetch/store data globally first or just use what we have
+        // But renderDeliveries handles sorting if currentLat is set.
+        // So just re-calling render with current data is enough if we have it?
+        // We fetch data in initApp calls via fetchDeliveries.
+        // Let's manually trigger a refetch or re-render if we have data.
+        fetchDeliveries(); 
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -418,6 +410,13 @@ $deliveries = $stmt->fetchAll();
              document.getElementById('completeForm').submit();
         } else {
             alert("Incorrect QR Code! Please scan the correct customer's code.");
+        }
+    }
+
+    function completeDelivery(assignmentId) {
+        if(confirm('Are you sure you want to mark this order as DELIVERED?')) {
+            document.getElementById('assignment_id').value = assignmentId;
+            document.getElementById('completeForm').submit();
         }
     }
 

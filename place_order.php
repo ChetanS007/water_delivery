@@ -39,13 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // Check for existing active subscription (Pending, Approved, Assigned)
+    $check_stmt = $pdo->prepare("SELECT id FROM orders WHERE user_id = ? AND status IN ('Pending', 'Approved', 'Assigned')");
+    $check_stmt->execute([$user_id]);
+    if ($check_stmt->rowCount() > 0) {
+        echo "<script>alert('You already have an active subscription request. Please wait for it to be processed.'); window.location.href='profile.php';</script>";
+        exit();
+    }
+
     $final_amount = $subtotal - $discount_amount;
 
     try {
         $pdo->beginTransaction();
 
-        // 1. Create Order with Discount Info
-        // Note: discount_amount and offer_code_applied columns were added in update_offers_db.php
+        // 1. Create Order with Discount Info (Status: Pending)
         $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_type, custom_days, total_amount, discount_amount, offer_code_applied, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
         $stmt->execute([$user_id, $order_type, $custom_days, $final_amount, $discount_amount, $offer_code_applied]);
         $order_id = $pdo->lastInsertId();
@@ -55,11 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$order_id, $product_id, $quantity, $price]);
 
         $pdo->commit();
-        echo "<script>alert('Order Placed Successfully!'); window.location.href='my_orders.php';</script>";
+        echo "<script>alert('Subscription Request Sent Successfully! Awaiting Admin Approval.'); window.location.href='profile.php';</script>";
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        echo "<script>alert('Failed to place order: " . $e->getMessage() . "'); window.location.href='index.php';</script>";
+        echo "<script>alert('Failed to send request: " . $e->getMessage() . "'); window.location.href='index.php';</script>";
     }
 }
 ?>

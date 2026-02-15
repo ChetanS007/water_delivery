@@ -18,16 +18,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $assignment = $stmt->fetch();
         $order_id = $assignment['order_id'];
 
-        // Update Assignment
-        $stmt = $pdo->prepare("UPDATE delivery_assignments SET delivery_status = 'Delivered', delivered_at = NOW() WHERE id = ?");
-        $stmt->execute([$assignment_id]);
+        // Create Daily Delivery Log
+        $boy_id = $_SESSION['user_id'];
+        $today = date('Y-m-d');
+        
+        // Check if already delivered today
+        $check = $pdo->prepare("SELECT id FROM daily_deliveries WHERE subscription_id = ? AND delivery_date = ?");
+        $check->execute([$order_id, $today]);
+        if($check->rowCount() > 0) {
+            $pdo->commit();
+            echo "<script>alert('Delivery already logged for today!'); window.location.href='dashboard.php';</script>";
+            exit();
+        }
 
-        // Update Order
-        $stmt = $pdo->prepare("UPDATE orders SET status = 'Delivered' WHERE id = ?");
-        $stmt->execute([$order_id]);
+        // Insert Record
+        $stmt = $pdo->prepare("INSERT INTO daily_deliveries (subscription_id, delivery_boy_id, delivery_date, status, delivered_at) VALUES (?, ?, ?, 'Delivered', NOW())");
+        $stmt->execute([$order_id, $boy_id, $today]);
 
         $pdo->commit();
-        echo "<script>alert('Delivery Completed!'); window.location.href='dashboard.php';</script>";
+        echo "<script>alert('Delivery Completed for Today!'); window.location.href='dashboard.php';</script>";
     } catch (Exception $e) {
         $pdo->rollBack();
         echo "Error: " . $e->getMessage();
