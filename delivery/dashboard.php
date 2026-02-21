@@ -45,7 +45,7 @@ $deliveries = [];
             <i class="fa-solid fa-motorcycle me-2"></i>
             Welcome, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Partner'); ?>
         </span>
-        <a href="login.php" class="btn btn-sm btn-outline-light">Logout</a>
+        <a href="../logout.php" class="btn btn-sm btn-outline-light">Logout</a>
     </div>
 </nav>
 
