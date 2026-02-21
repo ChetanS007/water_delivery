@@ -11,7 +11,7 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AquaFlow - Premium Water Delivery</title>
+    <title>Sudha Jal - Premium Water Delivery</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -29,7 +29,7 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-                 <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="AquaFlow">
+                 <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal">
             </a>
             
             <!-- Phone Center -->

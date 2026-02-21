@@ -139,6 +139,26 @@ $deliveries = [];
     </div>
 </div>
 
+<!-- Navigation Modal -->
+<div class="modal fade" id="navModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="navTargetName">Navigation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopNavigation()"></button>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                <div id="navMap" style="height: 100%; width: 100%;"></div>
+                <div class="position-absolute bottom-0 start-0 p-3 w-100" style="z-index: 1000;">
+                    <button class="btn btn-danger w-100 shadow fw-bold" data-bs-dismiss="modal" onclick="stopNavigation()">
+                        Exit Navigation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -151,6 +171,15 @@ $deliveries = [];
     let currentLat = null, currentLng = null;
     let sortedOrders = []; 
     let lastDeliveryData = null;
+
+    // Navigation State
+    let isNavigating = false;
+    let navMap = null;
+    let navRouting = null;
+    let navTargetLat = null;
+    let navTargetLng = null;
+    let navMyMarker = null;
+    let navTargetMarker = null;
 
     function showOverviewMap() {
         setTimeout(() => {
@@ -221,6 +250,11 @@ $deliveries = [];
                 // Update Map Marker if map is active
                 if(map && currentMarker) {
                     currentMarker.setLatLng([currentLat, currentLng]);
+                }
+
+                // Update Active Navigation
+                if(isNavigating) {
+                    updateNavigation(currentLat, currentLng);
                 }
             },
             (err) => {
@@ -498,6 +532,104 @@ $deliveries = [];
         if(html5QrcodeScanner) {
             html5QrcodeScanner.clear();
             html5QrcodeScanner = null;
+        }
+    }
+
+    // --- NAVIGATION LOGIC ---
+    function startNavigation(targetLat, targetLng, targetName) {
+        if (!currentLat || !currentLng) {
+            alert("Waiting for your current location. Please ensure GPS is active.");
+            return;
+        }
+
+        navTargetLat = targetLat;
+        navTargetLng = targetLng;
+        document.getElementById('navTargetName').innerText = "Navigating to: " + targetName;
+        
+        isNavigating = true;
+        const modal = new bootstrap.Modal(document.getElementById('navModal'));
+        modal.show();
+
+        document.getElementById('navModal').addEventListener('shown.bs.modal', function () {
+            if (!navMap) {
+                navMap = L.map('navMap').setView([currentLat, currentLng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OSM'
+                }).addTo(navMap);
+            } else {
+                navMap.invalidateSize();
+            }
+            updateNavigation(currentLat, currentLng);
+        }, { once: true });
+    }
+
+    function updateNavigation(myLat, myLng) {
+        if (!isNavigating || !navMap) return;
+
+        // Update markers
+        const myIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+
+        const targetIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+
+        if (navMyMarker) {
+            navMyMarker.setLatLng([myLat, myLng]);
+        } else {
+            navMyMarker = L.marker([myLat, myLng], { icon: myIcon }).addTo(navMap).bindPopup("You");
+        }
+
+        if (navTargetMarker) {
+            navTargetMarker.setLatLng([navTargetLat, navTargetLng]);
+        } else {
+            navTargetMarker = L.marker([navTargetLat, navTargetLng], { icon: targetIcon }).addTo(navMap).bindPopup("Customer");
+        }
+
+        // Update Routing
+        if (navRouting) {
+            navRouting.setWaypoints([
+                L.latLng(myLat, myLng),
+                L.latLng(navTargetLat, navTargetLng)
+            ]);
+        } else {
+            navRouting = L.Routing.control({
+                waypoints: [
+                    L.latLng(myLat, myLng),
+                    L.latLng(navTargetLat, navTargetLng)
+                ],
+                lineOptions: {
+                    styles: [{color: '#0d6efd', opacity: 0.8, weight: 6}]
+                },
+                createMarker: function() { return null; }, // Use our custom markers
+                addWaypoints: false,
+                draggableWaypoints: false,
+                show: false
+            }).addTo(navMap);
+        }
+        
+        // Auto-center (optional, maybe just follow)
+        // navMap.setView([myLat, myLng]);
+    }
+
+    function stopNavigation() {
+        isNavigating = false;
+        if (navRouting) {
+            navMap.removeControl(navRouting);
+            navRouting = null;
+        }
+        if (navMyMarker) {
+            navMap.removeLayer(navMyMarker);
+            navMyMarker = null;
+        }
+        if (navTargetMarker) {
+            navMap.removeLayer(navTargetMarker);
+            navTargetMarker = null;
         }
     }
 </script>

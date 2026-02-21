@@ -503,7 +503,7 @@ function printQR() {
     const name = document.getElementById('viewName').innerText;
     const id = document.getElementById('viewId').innerText;
     const win = window.open('', '', 'height=600,width=600');
-    win.document.write(`<html><head><title>Print QR</title><style>body{font-family:sans-serif;text-align:center;padding:20px}.card{border:2px solid #333;padding:20px;display:inline-block;border-radius:10px}h2{margin:10px 0;color:#333}p{font-size:14px;color:#666;margin:0}img{margin-top:10px;max-width:100%;border:1px solid #eee}</style></head><body><div class="card"><h2>AquaFlow Delivery</h2><p>Customer: <strong>${name}</strong></p><p>ID: <strong>${id}</strong></p><img src="${imgData}" width="200" /><p style="margin-top:10px">Scan to Deliver</p></div></body></html>`);
+    win.document.write(`<html><head><title>Print QR</title><style>body{font-family:sans-serif;text-align:center;padding:20px}.card{border:2px solid #333;padding:20px;display:inline-block;border-radius:10px}h2{margin:10px 0;color:#333}p{font-size:14px;color:#666;margin:0}img{margin-top:10px;max-width:100%;border:1px solid #eee}</style></head><body><div class="card"><h2>Sudha Jal Delivery</h2><p>Customer: <strong>${name}</strong></p><p>ID: <strong>${id}</strong></p><img src="${imgData}" width="200" /><p style="margin-top:10px">Scan to Deliver</p></div></body></html>`);
     win.document.close(); win.print();
 }
 </script>

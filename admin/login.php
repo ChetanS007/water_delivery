@@ -11,7 +11,7 @@ if(isset($_SESSION['user_id'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login - AquaFlow</title>
+    <title>Admin Login - Sudha Jal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/water_delivery/assets/css/style.css">
     <style>

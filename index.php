@@ -17,7 +17,7 @@ try {
         <div class="row align-items-center">
             <!-- Left Side -->
             <div class="col-lg-5 mb-5 mb-lg-0 animate-on-scroll">
-                <span class="d-block text-primary fw-bold text-uppercase fs-6 mb-3 font-subheading" style="letter-spacing: 2px;">Welcome into AquaFlow</span>
+                <span class="d-block text-primary fw-bold text-uppercase fs-6 mb-3 font-subheading" style="letter-spacing: 2px;">Welcome into Sudha Jal</span>
                 <h1 class="hero-title text-dark">Pure & Healthy<br><span class="text-primary">Drinking Water</span></h1>
                 <p class="lead text-muted mb-5 pe-lg-5">
                     We deliver the purest natural mineral water directly to your doorstep. Experience hydration like never before.
@@ -25,9 +25,9 @@ try {
                 <div class="d-flex gap-3">
                     <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">ORDER TODAY</button>
                     <button class="btn btn-secondary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#loginModal">BUY BOTTLE</button>
-                </div>
+                </div> 
             </div>
-            
+              
             <!-- Right Side -->
             <div class="col-lg-7 text-center position-relative animate-on-scroll">
                 <div class="hero-image-wrapper">
@@ -264,10 +264,10 @@ try {
                     </div>
                     <p class="testimonial-text">"The water tastes amazing and the delivery is always punctual. Highly recommended for families!"</p>
                     <div class="avatars-box mt-4">
-                        <img src="assets/img/author-1.jpg" alt="Client 1">
-                        <img src="assets/img/author-2.jpg" alt="Client 2">
+                        <img src="https://img.freepik.com/free-photo/cheerful-indian-businessman-smiling-closeup-portrait-jobs-career-campaign_53876-129416.jpg?t=st=1771673318~exp=1771676918~hmac=30aa93d38c7ae92f7e314eb55c6235c0506b6f950a50f1259fe01fc0d68a5219&w=1480" alt="Client 1">
+                        <img src="https://img.freepik.com/premium-photo/studio-portrait-young-cheerful-woman_53876-44835.jpg" alt="Client 2">
                     </div>
-                    <h5 class="mt-3 fw-bold text-primary">Sarah & Mike</h5>
+                    <h5 class="mt-3 fw-bold text-primary">Aaksh & Divya</h5>
                     <small class="text-muted">Loyal Customers</small>
                 </div>
                 <!-- Add more items if needed -->
@@ -281,33 +281,7 @@ try {
         </div>
     </div>
 </section>
-
-<!-- 9. NEWS / BLOG SECTION -->
-<section class="py-5 bg-white">
-    <div class="container text-center py-5 animate-on-scroll">
-        <div class="section-title">
-            <h2>The News About AquaFlow</h2>
-            <p class="text-muted">Stay updated with our latest hydration tips.</p>
-        </div>
-        <div class="py-5">
-            <!-- Minimal empty space layout as requested -->
-            <p class="text-muted fst-italic">No recent news available.</p>
-        </div>
-    </div>
-</section>
-
-<!-- 10. PARTNERS SECTION -->
-<section class="py-5 bg-light border-top">
-    <div class="container text-center animate-on-scroll">
-        <h5 class="text-muted text-uppercase fw-bold mb-5 small letter-spacing-2">Trusted Partners</h5>
-        <div class="row justify-content-center align-items-center opacity-50 grayscale-hover transition-all">
-             <div class="col-6 col-md-3 mb-4"><i class="fa-brands fa-aws fa-3x"></i></div>
-             <div class="col-6 col-md-3 mb-4"><i class="fa-brands fa-google fa-3x"></i></div>
-             <div class="col-6 col-md-3 mb-4"><i class="fa-brands fa-stripe fa-3x"></i></div>
-             <div class="col-6 col-md-3 mb-4"><i class="fa-brands fa-uber fa-3x"></i></div>
-        </div>
-    </div>
-</section>
+ 
 
 <!-- 11. FOOTER -->
 <?php include 'includes/footer.php'; ?>

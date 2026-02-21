@@ -9,7 +9,7 @@ $role = $_SESSION['role'] ?? 'Admin';
 ?>
 <div class="sidebar">
     <a href="dashboard.php" class="sidebar-brand text-decoration-none">
-        <img src="../<?php echo htmlspecialchars($sysLogo); ?>" alt="AquaFlow" style="max-height: 40px; width: auto;">
+        <img src="../<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal" style="max-height: 40px; width: auto;">
     </a>
     
     <ul class="sidebar-menu">
