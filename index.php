@@ -242,7 +242,7 @@ try {
             </div>
             <div class="col-lg-5 d-none d-lg-block position-relative">
                  <!-- Optional graphic or empty space -->
-                 <img src="assets/img/video-1.png" class="img-fluid rounded-4 shadow-lg border border-4 border-white opacity-75" alt="Service">
+                 <img src="assets/img/video-1.png" class="img-fluid rounded-4 opacity-75" alt="Service">
             </div>
         </div>
     </div>

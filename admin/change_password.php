@@ -1,5 +1,4 @@
 <?php
-require_once '../includes/db.php';
 // Placeholder logic
 ?>
 <?php include 'includes/header.php'; ?>

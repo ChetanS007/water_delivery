@@ -1,3 +1,11 @@
+<?php
+require_once 'includes/db.php';
+
+// Fetch system logo
+$stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'logo'");
+$stmt->execute();
+$sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/themes/uaques/assets/images/logo.png';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +29,7 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-                 <img src="https://uaques.smartdemowp.com/wp-content/themes/uaques/assets/images/logo.png" alt="AquaFlow">
+                 <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="AquaFlow">
             </a>
             
             <!-- Phone Center -->
@@ -29,8 +37,8 @@
                  <div class="bg-light rounded-circle p-2 text-primary d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
                      <i class="fa-solid fa-phone fa-sm"></i>
                  </div>
-                 <a href="tel:+1234567890" class="fw-bold text-dark text-decoration-none font-subheading" style="font-size: 0.95rem;">+1 (234) 567-890</a>
-            </div>
+                 <a href="tel:+91 9423121274" class="fw-bold text-dark text-decoration-none font-subheading" style="font-size: 0.95rem;">+91 9423121274</a>
+            </div> 
 
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
@@ -48,6 +56,11 @@
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-primary" href="#" data-bs-toggle="modal" data-bs-target="#qrCodeModal">
                                 <i class="fa-solid fa-qrcode me-1"></i> My QR Code
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-success" href="my_bill.php">
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> My Bill
                             </a>
                         </li>
                     <?php else: ?>

@@ -1,6 +1,6 @@
 <?php
-// admins.php - Admin Management (Super Admin Only)
 require_once '../includes/db.php';
+// admins.php - Admin Management (Super Admin Only)
 if ($_SESSION['role'] !== 'Superadmin') {
     header("Location: dashboard.php");
     exit();

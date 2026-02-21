@@ -1,6 +1,5 @@
 <?php
 // delivery_boys.php
-require_once '../includes/db.php';
 ?>
 <?php include 'includes/header.php'; ?>
 

@@ -1,6 +1,5 @@
 <?php
 // reports.php
-require_once '../includes/db.php';
 ?>
 <?php include 'includes/header.php'; ?>
 

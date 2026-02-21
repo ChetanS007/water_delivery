@@ -32,6 +32,7 @@ $orders = $stmt->fetchAll();
                         <th>Amount</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,11 +64,16 @@ $orders = $stmt->fetchAll();
                                     <span class="badge bg-<?php echo $statusClass; ?>"><?php echo $order['status']; ?></span>
                                 </td>
                                 <td><?php echo date('M d, Y h:i A', strtotime($order['created_at'])); ?></td>
+                                <td>
+                                    <a href="my_bill.php" class="btn btn-sm btn-success rounded-pill px-3">
+                                        <i class="fa-solid fa-upload me-1"></i> Upload
+                                    </a>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="7" class="text-center py-4">
                                 <p class="text-muted mb-0">No orders found.</p>
                                 <a href="index.php" class="btn btn-sm btn-primary mt-2">Place Your First Order</a>
                             </td>

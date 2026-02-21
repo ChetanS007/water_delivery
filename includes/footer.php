@@ -1,9 +1,19 @@
+<?php
+// Fetch system logo if not already fetched
+if (!isset($sysLogo)) {
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'logo'");
+    $stmt->execute();
+    $sysLogo = $stmt->fetchColumn() ?: 'assets/images/logo.png';
+}
+?>
 <footer class="main-footer">
     <div class="footer-wave"></div> <!-- Wave Divider -->
     <div class="container">
         <div class="row gy-5">
             <div class="col-lg-4">
-                <h3 class="text-white mb-4 fw-bold font-heading">AquaFlow</h3>
+                <div class="mb-4">
+                    <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="AquaFlow" style="max-height: 50px;">
+                </div>
                 <p class="mb-4 small">Delivering health and purity to your doorstep. Join thousands of happy customers today.</p>
                 <div class="footer-social">
                     <a href="#"><i class="fa-brands fa-facebook-f"></i></a>

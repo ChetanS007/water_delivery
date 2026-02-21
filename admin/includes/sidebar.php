@@ -1,10 +1,15 @@
 <?php
+// Fetch system logo
+$stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'logo'");
+$stmt->execute();
+$sysLogo = $stmt->fetchColumn() ?: 'assets/images/logo.png';
+
 $current_page = basename($_SERVER['PHP_SELF']);
 $role = $_SESSION['role'] ?? 'Admin';
 ?>
 <div class="sidebar">
     <a href="dashboard.php" class="sidebar-brand text-decoration-none">
-        <i class="fa-solid fa-droplet"></i> AquaFlow
+        <img src="../<?php echo htmlspecialchars($sysLogo); ?>" alt="AquaFlow" style="max-height: 40px; width: auto;">
     </a>
     
     <ul class="sidebar-menu">
@@ -77,6 +82,11 @@ $role = $_SESSION['role'] ?? 'Admin';
         <li class="sidebar-item">
             <a href="payments.php" class="sidebar-link <?php echo $current_page == 'payments.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-wallet"></i> Payments
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="settings.php" class="sidebar-link <?php echo $current_page == 'settings.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-gear"></i> Settings
             </a>
         </li>
     </ul>
