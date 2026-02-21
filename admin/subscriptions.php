@@ -193,22 +193,69 @@ function reject(id) {
     }
 }
 
+let allDeliveryBoys = [];
+
 function loadDeliveryBoys() {
     fetch('api/subscriptions.php?action=fetch_delivery_boys')
     .then(r => r.json())
     .then(res => {
         if(res.success) {
-            const sel = document.getElementById('deliveryBoySelect');
-            sel.innerHTML = '<option value="">Select Partner</option>';
-            res.data.forEach(boy => {
-                sel.innerHTML += `<option value="${boy.id}">${boy.full_name}</option>`;
-            });
+            allDeliveryBoys = res.data;
+            renderDeliveryBoyOptions();
         }
     });
 }
 
+function renderDeliveryBoyOptions(custLat = null, custLng = null) {
+    const sel = document.getElementById('deliveryBoySelect');
+    sel.innerHTML = '<option value="">Select Partner</option>';
+    
+    let boys = [...allDeliveryBoys];
+    
+    if (custLat && custLng) {
+        boys.forEach(b => {
+            if (b.current_lat && b.current_lng) {
+                b.distance = getDistance(custLat, custLng, b.current_lat, b.current_lng);
+            } else {
+                b.distance = Infinity;
+            }
+        });
+        boys.sort((a, b) => a.distance - b.distance);
+    }
+
+    boys.forEach(boy => {
+        let distText = '';
+        if (boy.distance !== undefined && boy.distance !== Infinity) {
+            distText = ` (${boy.distance.toFixed(1)} km away)`;
+        }
+        sel.innerHTML += `<option value="${boy.id}">${boy.full_name}${distText}</option>`;
+    });
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c;
+}
+
 function openAssign(id) {
     document.getElementById('assignOrderId').value = id;
+    
+    // Find subscription data to get customer location
+    const subData = JSON.parse(lastSubData);
+    const sub = subData.find(s => s.id == id);
+    
+    if (sub && sub.latitude && sub.longitude) {
+        renderDeliveryBoyOptions(parseFloat(sub.latitude), parseFloat(sub.longitude));
+    } else {
+        renderDeliveryBoyOptions();
+    }
+    
     new bootstrap.Modal(document.getElementById('assignModal')).show();
 }
 

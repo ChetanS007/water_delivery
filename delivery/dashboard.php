@@ -146,42 +146,102 @@ $deliveries = [];
     let currentTargetQR = "";
     let currentAssignmentId = "";
     let map;
+    let currentMarker;
     let routingControl;
-    let currentLat, currentLng;
+    let currentLat = null, currentLng = null;
     let sortedOrders = []; 
-
     let lastDeliveryData = null;
 
+    function showOverviewMap() {
+        setTimeout(() => {
+            initMap(currentLat, currentLng, sortedOrders);
+        }, 300);
+    }
+
+    function resetOverview() {
+        // No action needed for list view
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        // initApp(); // Removed undefined function
+        startTracking();
         fetchDeliveries(); // Initial Load
-        
-        // Get Location
-        if (navigator.geolocation) {
-             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    currentLat = pos.coords.latitude;
-                    currentLng = pos.coords.longitude;
-                    document.getElementById('locStatus').innerText = "Location Active";
-                    // Re-render to show distances if data already loaded
-                    if(sortedOrders.length > 0) renderDeliveries(sortedOrders);
-                },
-                (err) => {
-                    document.getElementById('locStatus').innerText = "Location Denied";
-                    console.warn("Location access denied or failed.");
-                }
-            );
-        } else {
-            document.getElementById('locStatus').innerText = "Geolocation not supported";
-        }
         
         // Polling (No Full Page Reload)
         setInterval(() => {
             if(!html5QrcodeScanner) { 
                 fetchDeliveries();
             }
-        }, 10000);
+        }, 30000);
     });
+
+    let watchId = null;
+
+    function startTracking() {
+        if (!navigator.geolocation) {
+            document.getElementById('locStatus').innerText = "Geolocation not supported";
+            return;
+        }
+
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+                
+                // Fetch Address Name (Reverse Geocoding)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}&zoom=18&addressdetails=1`, {
+                    headers: { 'Accept-Language': 'en' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const addr = data.display_name.split(',')[0] + ', ' + (data.address.suburb || data.address.city || data.address.town || '');
+                    document.getElementById('locStatus').innerHTML = `
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="text-success fw-bold"><i class="fa-solid fa-location-dot me-1"></i> ${addr}</span>
+                            <span style="font-size: 10px;" class="text-muted">Live: ${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}</span>
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    document.getElementById('locStatus').innerHTML = `
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="text-success fw-bold"><i class="fa-solid fa-location-crosshairs me-1"></i> Live Tracking</span>
+                            <span style="font-size: 10px;" class="text-muted">Lat: ${currentLat.toFixed(4)}, Lng: ${currentLng.toFixed(4)}</span>
+                        </div>
+                    `;
+                });
+                
+                // Push to server
+                updateLiveLocation(currentLat, currentLng);
+
+                // Re-render distance badges
+                if(sortedOrders.length > 0) renderDeliveries(sortedOrders);
+
+                // Update Map Marker if map is active
+                if(map && currentMarker) {
+                    currentMarker.setLatLng([currentLat, currentLng]);
+                }
+            },
+            (err) => {
+                document.getElementById('locStatus').innerHTML = `
+                    <button class="btn btn-link btn-sm text-danger fw-bold p-0 text-decoration-none" onclick="startTracking()">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Location access denied. <span class="text-primary text-decoration-underline">Try again</span>
+                    </button>
+                `;
+                console.warn("Location access denied or failed.");
+            },
+            { enableHighAccuracy: true }
+        );
+    }
+
+    function updateLiveLocation(lat, lng) {
+        const fd = new FormData();
+        fd.append('lat', lat);
+        fd.append('lng', lng);
+        fetch('api/update_location.php', { method: 'POST', body: fd })
+        .catch(err => console.error("Location update failed", err));
+    }
 
     function fetchDeliveries() {
         const container = document.getElementById('deliveryList');
@@ -249,9 +309,14 @@ $deliveries = [];
         const container = document.getElementById('deliveryList');
         container.innerHTML = '';
 
-        // Show Today's Dispatch List (Unsorted)
-        let displayItems = items;
-        sortedOrders = items;
+        // Show Today's Dispatch List (Sorted by Distance if location available)
+        let displayItems = [...items];
+        
+        if (currentLat && currentLng) {
+            displayItems = sortDeliveriesByDistance(items, currentLat, currentLng);
+        }
+        
+        sortedOrders = displayItems;
 
         if(displayItems.length === 0) {
             container.innerHTML = '<div class="col-12 text-center text-muted mt-5"><p>No order assigned.</p></div>';
@@ -311,57 +376,66 @@ $deliveries = [];
     }
 
     function initMap(myLat, myLng, orders) {
-        if (map) {
-            map.remove();
-            map = null;
+        if (!map) {
+            const center = myLat ? [myLat, myLng] : [20.5937, 78.9629]; 
+            map = L.map('map').setView(center, 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
         }
 
-        const center = myLat ? [myLat, myLng] : [20.5937, 78.9629]; 
-        map = L.map('map').setView(center, 13);
+        // Add or Update My Location Marker
+        if (myLat && myLng) {
+            const myIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            if (currentMarker) {
+                currentMarker.setLatLng([myLat, myLng]);
+            } else {
+                currentMarker = L.marker([myLat, myLng], { icon: myIcon }).addTo(map).bindPopup("<b>Your Location</b>");
+            }
+        }
+
+        // Clear existing route
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
 
         if (!myLat || orders.length === 0) return;
 
-        // Prepare waypoints: Start (My Loc) -> Order 1 -> Order 2 ...
+        // Prepare waypoints
         let waypoints = [L.latLng(myLat, myLng)];
         orders.forEach(o => {
-            waypoints.push(L.latLng(parseFloat(o.latitude), parseFloat(o.longitude)));
+            if(o.latitude && o.longitude) {
+                waypoints.push(L.latLng(parseFloat(o.latitude), parseFloat(o.longitude)));
+            }
         });
 
-        // Use Routing Machine to draw the full route
-        L.Routing.control({
+        if(waypoints.length < 2) return;
+
+        routingControl = L.Routing.control({
             waypoints: waypoints,
-             lineOptions: {
-                styles: [{color: 'blue', opacity: 0.6, weight: 4}]
+            lineOptions: {
+                styles: [{color: '#0d6efd', opacity: 0.7, weight: 5}]
             },
             createMarker: function(i, wp, nWps) {
-                let iconUrl, popupText;
-                if (i === 0) {
-                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png';
-                    popupText = "<b>Start:</b> You";
-                } else {
-                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png';
-                    popupText = `<b>${i}.</b> ${orders[i-1].full_name}`; // i-1 because 0 is start
-                }
+                if (i === 0) return currentMarker; // Don't recreate my marker
 
-                return L.marker(wp.latLng, {
-                    icon: L.icon({
-                        iconUrl: iconUrl,
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).bindPopup(popupText);
+                let popupText = `<b>${i}.</b> ${orders[i-1].full_name}<br><small>${orders[i-1].address}</small>`;
+                const custIcon = L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                });
+
+                return L.marker(wp.latLng, { icon: custIcon }).bindPopup(popupText);
             },
             addWaypoints: false,
             draggableWaypoints: false,
-            routeWhileDragging: false,
-            show: false // Hide text instructions to save space
+            show: false
         }).addTo(map);
     }
     

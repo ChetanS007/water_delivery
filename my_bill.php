@@ -13,6 +13,7 @@ $messageType = '';
 // Handle Payment Upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['screenshot'])) {
     $amount = $_POST['amount'] ?? 0;
+    $month = $_POST['payment_month'] ?? ''; // New field
     
     $targetDir = "uploads/payments/";
     if (!is_dir($targetDir)) {
@@ -26,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['screenshot'])) {
     $allowTypes = array('jpg', 'png', 'jpeg', 'webp');
     if (in_array(strtolower($fileType), $allowTypes)) {
         if (move_uploaded_file($_FILES["screenshot"]["tmp_name"], $targetFilePath)) {
-            $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, screenshot_url, status) VALUES (?, ?, ?, 'Pending')");
-            if ($stmt->execute([$user_id, $amount, $targetFilePath])) {
+            $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, payment_month, screenshot_url, status) VALUES (?, ?, ?, ?, 'Pending')");
+            if ($stmt->execute([$user_id, $amount, $month, $targetFilePath])) {
                 $message = "Payment screenshot uploaded successfully. Awaiting admin approval.";
                 $messageType = "success";
             } else {
@@ -66,12 +67,19 @@ $paidAmount = $stmt->fetchColumn();
 // 3. Pending Amount
 $pendingAmount = $totalAmount - $paidAmount;
 
-// 4. Month-wise breakdown
+// 4. Month-wise breakdown with Payment Status
 $sqlMonthly = "
     SELECT 
         DATE_FORMAT(dd.delivery_date, '%M %Y') as month_name,
         DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
-        SUM(oi.quantity * p.price) as monthly_total
+        SUM(oi.quantity * p.price) as monthly_total,
+        (
+            SELECT status 
+            FROM customer_payments 
+            WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m')
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ) as payment_status
     FROM daily_deliveries dd
     JOIN orders o ON dd.subscription_id = o.id
     JOIN order_items oi ON o.id = oi.order_id
@@ -81,7 +89,7 @@ $sqlMonthly = "
     ORDER BY month_key DESC
 ";
 $stmt = $pdo->prepare($sqlMonthly);
-$stmt->execute([$user_id]);
+$stmt->execute([$user_id, $user_id]); // Pass twice for subquery and main query
 $monthlyBreakdown = $stmt->fetchAll();
 
 // Fetch Payment QR
@@ -160,19 +168,38 @@ include 'includes/header.php';
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">Month</th>
-                            <th class="text-end pe-4">Total Amount</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($monthlyBreakdown)): ?>
                             <tr>
-                                <td colspan="2" class="text-center py-5 text-muted">No billing records found.</td>
+                                <td colspan="3" class="text-center py-5 text-muted">No billing records found.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($monthlyBreakdown as $row): ?>
+                                <?php 
+                                    $statusText = 'Pending';
+                                    $statusClass = 'secondary';
+                                    
+                                    if ($row['payment_status'] === 'Approved') {
+                                        $statusText = 'Payment Successful';
+                                        $statusClass = 'success';
+                                    } elseif ($row['payment_status'] === 'Pending') {
+                                        $statusText = 'Under Review';
+                                        $statusClass = 'warning';
+                                    } elseif ($row['payment_status'] === 'Rejected') {
+                                        $statusText = 'Payment Failed';
+                                        $statusClass = 'danger';
+                                    }
+                                ?>
                                 <tr>
                                     <td class="ps-4 fw-medium"><?php echo $row['month_name']; ?></td>
-                                    <td class="text-end pe-4 fw-bold text-primary">₹<?php echo number_format($row['monthly_total'], 2); ?></td>
+                                    <td class="fw-bold text-primary">₹<?php echo number_format($row['monthly_total'], 2); ?></td>
+                                    <td>
+                                        <span class="badge bg-<?php echo $statusClass; ?> rounded-pill px-3"><?php echo $statusText; ?></span>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -204,6 +231,15 @@ include 'includes/header.php';
                 </div>
 
                 <form action="my_bill.php" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase opacity-75">Select Month</label>
+                        <select name="payment_month" class="form-select" required>
+                            <option value="">Choose Month...</option>
+                            <?php foreach ($monthlyBreakdown as $row): ?>
+                                <option value="<?php echo $row['month_key']; ?>"><?php echo $row['month_name']; ?> (₹<?php echo number_format($row['monthly_total'], 2); ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uppercase opacity-75">Payment Amount (₹)</label>
                         <div class="input-group">

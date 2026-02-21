@@ -71,6 +71,12 @@ $role = $_SESSION['role'] ?? 'Admin';
             </a>
         </li>
 
+        <li class="sidebar-item">
+            <a href="fleet_map.php" class="sidebar-link <?php echo $current_page == 'fleet_map.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-map-location-dot"></i> Fleet Tracking
+            </a>
+        </li>
+
         <li class="sidebar-header small text-uppercase text-muted fw-bold px-3 mt-3 mb-1" style="color: white!important;">Analytics & Finance</li>
 
         <li class="sidebar-item">

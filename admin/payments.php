@@ -33,6 +33,7 @@ $sql = "
         cp.user_id,
         u.full_name as user_name,
         cp.amount as submitted_amount,
+        cp.payment_month,
         cp.screenshot_url,
         cp.status,
         cp.created_at,
@@ -88,6 +89,7 @@ include 'includes/header.php';
                         <tr>
                             <th class="ps-4">ID</th>
                             <th>Customer Name</th>
+                            <th>Bill Month</th>
                             <th>Submitted Amount</th>
                             <th>Total Bill</th>
                             <th>Paid Amount</th>
@@ -100,13 +102,14 @@ include 'includes/header.php';
                     <tbody>
                         <?php if (empty($payments)): ?>
                             <tr>
-                                <td colspan="9" class="text-center py-5 text-muted">No payments found.</td>
+                                <td colspan="10" class="text-center py-5 text-muted">No payments found.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($payments as $pay): ?>
                                 <?php 
                                     $pending = $pay['total_bill'] - $pay['total_paid'];
                                     $statusClass = $pay['status'] === 'Approved' ? 'success' : ($pay['status'] === 'Pending' ? 'warning' : 'danger');
+                                    $monthName = $pay['payment_month'] ? date('F Y', strtotime($pay['payment_month'] . '-01')) : 'General';
                                 ?>
                                 <tr>
                                     <td class="ps-4 fw-bold text-muted">#<?php echo $pay['id']; ?></td>
@@ -114,6 +117,7 @@ include 'includes/header.php';
                                         <div class="fw-bold"><?php echo htmlspecialchars($pay['user_name']); ?></div>
                                         <small class="text-muted"><?php echo date('d M, Y h:i A', strtotime($pay['created_at'])); ?></small>
                                     </td>
+                                    <td><span class="badge bg-light text-dark border"><?php echo $monthName; ?></span></td>
                                     <td class="fw-bold text-primary">₹<?php echo number_format($pay['submitted_amount'], 2); ?></td>
                                     <td>₹<?php echo number_format($pay['total_bill'], 2); ?></td>
                                     <td class="text-success">₹<?php echo number_format($pay['total_paid'], 2); ?></td>
