@@ -37,7 +37,7 @@ if (!isset($sysLogo)) {
                     <h5>Contact</h5>
                     <ul class="list-unstyled small">
                         <li class="mb-2"><i class="fa-solid fa-phone me-2 text-warning"></i> +1 (234) 567-890</li>
-                        <li class="mb-2"><i class="fa-solid fa-envelope me-2 text-warning"></i> info@Sudha Jal.com</li>
+                        <li class="mb-2"><i class="fa-solid fa-envelope me-2 text-warning"></i> info@sudhajal.com</li>
                         <li class="mb-2"><i class="fa-solid fa-location-dot me-2 text-warning"></i> 123 Water St, NY</li>
                     </ul>
                 </div>

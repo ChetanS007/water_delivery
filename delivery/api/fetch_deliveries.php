@@ -69,12 +69,28 @@ try {
     $todayStr = $currentDate->format('Y-m-d');
 
     foreach ($all_assignments as $item) {
-        $isDue = true; // FORCE SHOW ALL for now
-        
-        /* 
-        // --- DUE DATE LOGIC (DISABLED) ---
-        // ...
-        */
+        $isDue = false;
+        $currentDayName = date('D'); // Mon, Tue, etc.
+
+        if ($item['order_type'] === 'Daily') {
+            $isDue = true;
+        } elseif ($item['order_type'] === 'Custom') {
+            $days = json_decode($item['custom_days'], true);
+            if (is_array($days) && in_array($currentDayName, $days)) {
+                $isDue = true;
+            }
+        } elseif ($item['order_type'] === 'Alternate') {
+            // Logic for Alternate Day: (Today - Created) % 2 == 0
+            $start = new DateTime(date('Y-m-d', strtotime($item['created_at'])));
+            $today = new DateTime($todayStr);
+            $diff = $start->diff($today)->days;
+            if ($diff % 2 === 0) {
+                $isDue = true;
+            }
+        } else {
+            // Default for other types for now
+            $isDue = true; 
+        }
 
         if ($isDue) {
             // Check if already delivered TODAY

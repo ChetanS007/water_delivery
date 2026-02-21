@@ -1,0 +1,22 @@
+# Database Configuration
+includes/db.php
+
+# Environment Files
+.env
+.env.local
+
+# IDE / Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Temporary Files
+*.php.bak
+check_*.php
+list_*.php
+update_*.php
