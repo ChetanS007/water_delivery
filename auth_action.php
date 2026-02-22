@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE mobile = ?");
         $stmt->execute([$mobile]);
         if ($stmt->rowCount() > 0) {
-            echo "<script>alert('Mobile number already registered!'); window.location.href='index.php';</script>";
+            echo "<script>alert('हा मोबाईल क्रमांक आधीच नोंदणीकृत आहे!'); window.location.href='index.php';</script>";
             exit();
         }
 
@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $update = $pdo->prepare("UPDATE users SET qr_code = ? WHERE id = ?");
             $update->execute([$qr_code, $user_id]);
 
-            echo "<script>alert('Registration Successful! Please Login.'); window.location.href='index.php';</script>";
+            echo "<script>alert('नोंदणी यशस्वी झाली! कृपया लॉगिन करा.'); window.location.href='index.php';</script>";
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
         }
@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 header("Location: admin/dashboard.php");
                 exit();
             }
-            echo "<script>alert('Invalid Admin Credentials!'); window.location.href='admin/login.php';</script>";
+            echo "<script>alert('अवैध ॲडमिन कडेन्शियल्स!'); window.location.href='admin/login.php';</script>";
             exit();
         } 
         
@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     exit();
                 }
                 // If failed delivery login, show error specific to delivery
-                 echo "<script>alert('Invalid Delivery Partner Credentials!'); window.location.href='delivery/login.php';</script>";
+                 echo "<script>alert('अवैध डिलिव्हरी पार्टनर कडेन्शियल्स!'); window.location.href='delivery/login.php';</script>";
                  exit();
             }
 
@@ -107,10 +107,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                  // Let's assume they use delivery login page.
             }
 
-            echo "<script>alert('Invalid Mobile or Password!'); window.location.href='index.php';</script>";
+            echo "<script>alert('अवैध मोबाईल क्रमांक किंवा पासवर्ड!'); window.location.href='index.php';</script>";
         }
 
-        echo "<script>alert('Invalid Mobile or Password!'); window.location.href='index.php';</script>";
+        echo "<script>alert('अवैध मोबाईल क्रमांक किंवा पासवर्ड!'); window.location.href='index.php';</script>";
     }
 }
 ?>

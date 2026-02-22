@@ -44,7 +44,7 @@ $user_role = $_SESSION['role'] ?? 'Admin';
             <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <h4>Dashboard</h4> 
+            <h4 class="mb-0 fs-5"><?php echo ucfirst(str_replace('.php', '', basename($_SERVER['PHP_SELF']))); ?></h4> 
         </div>
         
         <div class="header-right">

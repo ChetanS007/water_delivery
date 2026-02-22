@@ -92,16 +92,36 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', loadOffers);
+let lastOfferData = null;
+document.addEventListener('DOMContentLoaded', () => {
+    loadOffers();
 
-function loadOffers() {
+    // Polling
+    setInterval(() => {
+        const modal = document.getElementById('offerModal');
+        const isModalOpen = modal && modal.classList.contains('show');
+        if (!isModalOpen) {
+            loadOffers(true);
+        }
+    }, 15000);
+});
+
+function loadOffers(isPoll = false) {
     const tbody = document.getElementById('offersTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+    
+    if(!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastOfferData = null;
+    }
 
     fetch('api/offers.php?action=fetch_all')
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastOfferData === currentDataStr) return;
+            lastOfferData = currentDataStr;
+
             tbody.innerHTML = '';
             if(res.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No offers found.</td></tr>';

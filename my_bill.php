@@ -29,73 +29,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['screenshot'])) {
         if (move_uploaded_file($_FILES["screenshot"]["tmp_name"], $targetFilePath)) {
             $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, payment_month, screenshot_url, status) VALUES (?, ?, ?, ?, 'Pending')");
             if ($stmt->execute([$user_id, $amount, $month, $targetFilePath])) {
-                $message = "Payment screenshot uploaded successfully. Awaiting admin approval.";
+                $message = "पेमेंट स्क्रीनशॉट यशस्वीरित्या अपलोड झाला. ॲडमिनच्या मंजुरीची प्रतीक्षा आहे.";
                 $messageType = "success";
             } else {
-                $message = "Failed to save payment details.";
+                $message = "पेमेंट तपशील जतन करण्यात अक्षम.";
                 $messageType = "danger";
             }
         } else {
-            $message = "Error uploading screenshot.";
+            $message = "स्क्रीनशॉट अपलोड करताना त्रुटी आली.";
             $messageType = "danger";
         }
     } else {
-        $message = "Invalid file type. Only JPG, PNG, WEBP allowed.";
+        $message = "अवैध फाइल प्रकार. फक्त JPG, PNG, WEBP ला परवानगी आहे.";
         $messageType = "danger";
     }
 }
 
-// 1. Calculate Total Amount (Deliveries)
-$sqlTotal = "
-    SELECT COALESCE(SUM(oi.quantity * p.price), 0) as total
-    FROM daily_deliveries dd
-    JOIN orders o ON dd.subscription_id = o.id
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON oi.product_id = p.id
-    WHERE o.user_id = ? AND dd.status = 'Delivered'
-";
-$stmt = $pdo->prepare($sqlTotal);
-$stmt->execute([$user_id]);
-$totalAmount = $stmt->fetchColumn();
-
-// 2. Calculate Paid Amount (Approved Payments)
-$sqlPaid = "SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status = 'Approved'";
-$stmt = $pdo->prepare($sqlPaid);
-$stmt->execute([$user_id]);
-$paidAmount = $stmt->fetchColumn();
-
-// 3. Pending Amount
-$pendingAmount = $totalAmount - $paidAmount;
-
-// 4. Month-wise breakdown with Payment Status
-$sqlMonthly = "
-    SELECT 
-        DATE_FORMAT(dd.delivery_date, '%M %Y') as month_name,
-        DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
-        SUM(oi.quantity * p.price) as monthly_total,
-        (
-            SELECT status 
-            FROM customer_payments 
-            WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m')
-            ORDER BY created_at DESC 
-            LIMIT 1
-        ) as payment_status
-    FROM daily_deliveries dd
-    JOIN orders o ON dd.subscription_id = o.id
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON oi.product_id = p.id
-    WHERE o.user_id = ? AND dd.status = 'Delivered'
-    GROUP BY month_key
-    ORDER BY month_key DESC
-";
-$stmt = $pdo->prepare($sqlMonthly);
-$stmt->execute([$user_id, $user_id]); // Pass twice for subquery and main query
-$monthlyBreakdown = $stmt->fetchAll();
-
-// Fetch Payment QR
-$stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'payment_qr'");
-$stmt->execute();
-$paymentQR = $stmt->fetchColumn();
+// ... existing logic ...
 
 include 'includes/header.php';
 ?>
@@ -103,12 +53,12 @@ include 'includes/header.php';
 <div class="container py-5">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2 class="fw-bold text-dark mb-1">My Billing Summary</h2>
-            <p class="text-muted">Track your consumption and payments</p>
+            <h2 class="fw-bold text-dark mb-1">माझ्या बिलाचा सारांश</h2>
+            <p class="text-muted">तुमचा वापर आणि पेमेंटचा मागोवा घ्या</p>
         </div>
         <div class="col-md-4 text-md-end">
             <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                <i class="fa-solid fa-upload me-2"></i> Upload Payment
+                <i class="fa-solid fa-upload me-2"></i> पेमेंट अपलोड करा
             </button>
         </div>
     </div>
@@ -126,10 +76,10 @@ include 'includes/header.php';
             <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0">Total Amount</h6>
+                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0" style="color: white;">एकूण रक्कम</h6>
                         <i class="fa-solid fa-receipt fs-4"></i>
                     </div>
-                    <h2 class="fw-bold mb-0">₹<?php echo number_format($totalAmount, 2); ?></h2>
+                    <h2 class="fw-bold mb-0" style="color: white;">₹<?php echo number_format($totalAmount, 2); ?></h2>
                 </div>
             </div>
         </div>
@@ -137,10 +87,10 @@ include 'includes/header.php';
             <div class="card border-0 shadow-sm rounded-4 bg-success text-white h-100">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0">Paid Amount</h6>
+                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0" style="color: white;">भरलेली रक्कम</h6>
                         <i class="fa-solid fa-circle-check fs-4"></i>
                     </div>
-                    <h2 class="fw-bold mb-0">₹<?php echo number_format($paidAmount, 2); ?></h2>
+                    <h2 class="fw-bold mb-0" style="color: white;">₹<?php echo number_format($paidAmount, 2); ?></h2>
                 </div>
             </div>
         </div>
@@ -148,7 +98,7 @@ include 'includes/header.php';
             <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark h-100">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0 text-dark">Pending Amount</h6>
+                        <h6 class="text-uppercase opacity-75 small fw-bold mb-0 text-dark">प्रलंबित रक्कम</h6>
                         <i class="fa-solid fa-clock fs-4 text-dark"></i>
                     </div>
                     <h2 class="fw-bold mb-0">₹<?php echo number_format($pendingAmount, 2); ?></h2>
@@ -160,42 +110,42 @@ include 'includes/header.php';
     <!-- Monthly Breakdown -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-0 py-3 px-4">
-            <h5 class="fw-bold mb-0">Month-wise Billing</h5>
+            <h5 class="fw-bold mb-0">महिनानिहाय बिल</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4">Month</th>
-                            <th>Total Amount</th>
-                            <th>Status</th>
+                            <th class="ps-4">महिना</th>
+                            <th>एकूण रक्कम</th>
+                            <th>स्थिती (Status)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($monthlyBreakdown)): ?>
                             <tr>
-                                <td colspan="3" class="text-center py-5 text-muted">No billing records found.</td>
+                                <td colspan="3" class="text-center py-5 text-muted">कोणतेही बिल रेकॉर्ड सापडले नाहीत.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($monthlyBreakdown as $row): ?>
                                 <?php 
-                                    $statusText = 'Pending';
+                                    $statusText = 'प्रलंबित';
                                     $statusClass = 'secondary';
                                     
                                     if ($row['payment_status'] === 'Approved') {
-                                        $statusText = 'Payment Successful';
+                                        $statusText = 'पेमेंट यशस्वी';
                                         $statusClass = 'success';
                                     } elseif ($row['payment_status'] === 'Pending') {
-                                        $statusText = 'Under Review';
+                                        $statusText = 'तपासणी सुरू';
                                         $statusClass = 'warning';
                                     } elseif ($row['payment_status'] === 'Rejected') {
-                                        $statusText = 'Payment Failed';
+                                        $statusText = 'पेमेंट अयशस्वी';
                                         $statusClass = 'danger';
                                     }
                                 ?>
                                 <tr>
-                                    <td class="ps-4 fw-medium"><?php echo $row['month_name']; ?></td>
+                                    <td class="ps-4 fw-medium"><?php echo date('M Y', strtotime($row['month_key'])); ?></td>
                                     <td class="fw-bold text-primary">₹<?php echo number_format($row['monthly_total'], 2); ?></td>
                                     <td>
                                         <span class="badge bg-<?php echo $statusClass; ?> rounded-pill px-3"><?php echo $statusText; ?></span>
@@ -215,45 +165,45 @@ include 'includes/header.php';
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Submit Payment</h5>
+                <h5 class="modal-title fw-bold">पेमेंट सबमिट करा</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="text-center mb-4">
-                    <p class="text-muted small mb-3">Scan the QR code below and pay your pending amount.</p>
+                    <p class="text-muted small mb-3">खालील QR कोड स्कॅन करा आणि तुमची प्रलंबित रक्कम भरा.</p>
                     <div class="bg-light p-3 rounded-4 d-inline-block border">
                         <?php if ($paymentQR): ?>
                             <img src="<?php echo htmlspecialchars($paymentQR); ?>" alt="Payment QR" style="max-height: 200px; width: auto;">
                         <?php else: ?>
-                            <div class="text-muted py-4">Admin hasn't uploaded a QR Code yet.</div>
+                            <div class="text-muted py-4">ऍडमिनने अद्याप QR कोड अपलोड केलेला नाही.</div>
                         <?php endif; ?>
                     </div>
                 </div>
 
                 <form action="my_bill.php" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase opacity-75">Select Month</label>
+                        <label class="form-label small fw-bold text-uppercase opacity-75">महिना निवडा</label>
                         <select name="payment_month" class="form-select" required>
-                            <option value="">Choose Month...</option>
+                            <option value="">महिना निवडा...</option>
                             <?php foreach ($monthlyBreakdown as $row): ?>
-                                <option value="<?php echo $row['month_key']; ?>"><?php echo $row['month_name']; ?> (₹<?php echo number_format($row['monthly_total'], 2); ?>)</option>
+                                <option value="<?php echo $row['month_key']; ?>"><?php echo date('M Y', strtotime($row['month_key'])); ?> (₹<?php echo number_format($row['monthly_total'], 2); ?>)</option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase opacity-75">Payment Amount (₹)</label>
+                        <label class="form-label small fw-bold text-uppercase opacity-75">पेमेंट रक्कम (₹)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0">₹</span>
                             <input type="number" step="0.01" name="amount" class="form-control border-start-0 ps-0" placeholder="0.00" required>
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label small fw-bold text-uppercase opacity-75">Upload Screenshot</label>
+                        <label class="form-label small fw-bold text-uppercase opacity-75">स्क्रीनशॉट अपलोड करा</label>
                         <input type="file" name="screenshot" class="form-control" accept="image/*" required>
-                        <div class="form-text small">Please upload a clear image of your transaction confirmation.</div>
+                        <div class="form-text small">कृपया तुमच्या व्यवहार पुष्टीकरणाची स्पष्ट प्रतिमा अपलोड करा.</div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm">
-                        Submit Payment Details
+                        पेमेंट तपशील सबमिट करा
                     </button>
                 </form>
             </div>

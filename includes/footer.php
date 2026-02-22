@@ -14,7 +14,7 @@ if (!isset($sysLogo)) {
                 <div class="mb-4">
                     <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal" style="max-height: 50px;">
                 </div>
-                <p class="mb-4 small">Delivering health and purity to your doorstep. Join thousands of happy customers today.</p>
+                <p class="mb-4 small">तुमच्या दारात आरोग्य आणि शुद्धता पोहोचवत आहोत. <br> आजच हजारो आनंदी ग्राहकांमध्ये सामील व्हा.</p>
                 <div class="footer-social">
                     <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
                     <a href="#"><i class="fa-brands fa-twitter"></i></a>
@@ -23,37 +23,28 @@ if (!isset($sysLogo)) {
             </div>
             <div class="col-lg-4 col-6">
                 <div class="footer-widget">
-                    <h5>Quick Links</h5>
+                    <h5>द्रुत दुवे</h5>
                     <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Home</a></li>
-                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">About Us</a></li>
-                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Products</a></li>
-                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">Contact</a></li>
+                        <li class="mb-2"><a href="index.php" class="text-white text-decoration-none">मुख्यपृष्ठ</a></li>
+                        <li class="mb-2"><a href="#features" class="text-white text-decoration-none">आमच्याबद्दल</a></li>
+                        <li class="mb-2"><a href="#products" class="text-white text-decoration-none">उत्पादने</a></li>
+                        <li class="mb-2"><a href="#" class="text-white text-decoration-none">संपर्क</a></li>
                     </ul>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
                  <div class="footer-widget">
-                    <h5>Contact</h5>
+                    <h5>संपर्क</h5>
                     <ul class="list-unstyled small">
-                        <li class="mb-2"><i class="fa-solid fa-phone me-2 text-warning"></i> +1 (234) 567-890</li>
+                        <li class="mb-2"><i class="fa-solid fa-phone me-2 text-warning"></i> +91 9423121274</li>
                         <li class="mb-2"><i class="fa-solid fa-envelope me-2 text-warning"></i> info@sudhajal.com</li>
-                        <li class="mb-2"><i class="fa-solid fa-location-dot me-2 text-warning"></i> 123 Water St, NY</li>
+                        <li class="mb-2"><i class="fa-solid fa-location-dot me-2 text-warning"></i> रवी नगर, परतवाडा, महाराष्ट्र ४४४८०५</li>
                     </ul>
                 </div>
             </div>
-            <!-- <div class="col-lg-3">
-                 <div class="footer-widget">
-                    <h5>Newsletter</h5>
-                    <form>
-                        <input type="email" class="newsletter-input" placeholder="Your Email Address">
-                        <button type="button" class="btn btn-secondary w-100 rounded-pill btn-sm">Subscribe</button>
-                    </form>
-                </div>
-            </div> -->
         </div>
         <div class="border-top border-secondary mt-5 pt-4 text-center small text-white-50">
-            &copy; <?php echo date("Y"); ?> Sudha Jal. All rights reserved.
+            &copy; <?php echo date("Y"); ?> सुधा जल. सर्व हक्क राखीव.
         </div>
     </div>
 </footer>

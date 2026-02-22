@@ -147,8 +147,18 @@
 </div>
 
 <script>
+let lastProductData = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
+    
+    // Polling
+    setInterval(() => {
+        const modal = document.getElementById('productModal');
+        const isModalOpen = modal.classList.contains('show');
+        if (!isModalOpen) {
+            loadProducts(1, true);
+        }
+    }, 15000);
     
     // Search Debounce
     let timer;
@@ -158,15 +168,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function loadProducts(page = 1) {
+function loadProducts(page = 1, isPoll = false) {
     const search = document.getElementById('searchInput').value;
     const tbody = document.getElementById('productTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+    
+    if(!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastProductData = null;
+    }
 
     fetch(`api/products.php?action=fetch_all&page=${page}&search=${encodeURIComponent(search)}`)
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastProductData === currentDataStr) return;
+            lastProductData = currentDataStr;
+
             tbody.innerHTML = '';
             if(res.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No products found.</td></tr>';

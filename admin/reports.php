@@ -30,11 +30,6 @@
             <i class="fa-solid fa-file-invoice-dollar me-2"></i> Billing & Revenue
         </button>
     </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="supply-tab" data-bs-toggle="tab" data-bs-target="#supply" type="button" role="tab">
-            <i class="fa-solid fa-truck-droplet me-2"></i> Supply & Distribution
-        </button>
-    </li>
 </ul>
 
 <div class="tab-content" id="reportTabContent">
@@ -55,14 +50,6 @@
                     <div class="card-header bg-white border-0 fw-bold">Consumer Categories</div>
                     <div class="card-body">
                         <div id="consumptionPie"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 fw-bold">Zone-wise Consumption</div>
-                    <div class="card-body">
-                        <div id="consumptionDonut"></div>
                     </div>
                 </div>
             </div>
@@ -99,35 +86,6 @@
         </div>
     </div>
 
-    <!-- 3. Supply Tab -->
-    <div class="tab-pane fade" id="supply" role="tabpanel">
-         <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 fw-bold">Daily Water Supply Volume</div>
-                    <div class="card-body">
-                        <div id="supplyBar"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 fw-bold">Supply Sources</div>
-                    <div class="card-body">
-                        <div id="supplyPie"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 fw-bold">Efficiency (Supplied vs Consumed)</div>
-                    <div class="card-body">
-                        <div id="supplyDonut"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
 </div>
 
@@ -139,7 +97,6 @@ document.addEventListener('DOMContentLoaded', loadAllReports);
 function loadAllReports() {
     loadConsumption();
     loadBilling();
-    loadSupply();
 }
 
 const commonOptions = {
@@ -166,22 +123,26 @@ function loadConsumption() {
         const pieOpts = { ...commonOptions, series: data.pie.map(i => i.count), labels: data.pie.map(i => i.customer_type), chart: { type: 'pie', height: 300 }, colors: ['#00CFE8', '#28C76F'] };
         renderChart('#consumptionPie', pieOpts, 'cPie');
 
-        // Donut
-        const donutOpts = { ...commonOptions, series: data.donut.map(i => i.value), labels: data.donut.map(i => i.label), chart: { type: 'donut', height: 300 }, colors: ['#EA5455', '#FF9F43', '#7367F0', '#28C76F'] };
-        renderChart('#consumptionDonut', donutOpts, 'cDonut');
     });
 }
 
 // 2. Billing Charts
 function loadBilling() {
     fetchReport('billing', (data) => {
-        // Bar
-        // Merge dates for comparison
+        // Bar: Format labels to Month Year
+        const formatMonth = (str) => {
+            if(!str) return 'N/A';
+            const [y, m] = str.split('-');
+            const date = new Date(y, m - 1);
+            return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        };
+
         const dates = [...new Set([...data.bar.billed.map(i=>i.date), ...data.bar.collected.map(i=>i.date)])].sort();
         const billed = dates.map(d => data.bar.billed.find(i=>i.date==d)?.amount || 0);
         const collected = dates.map(d => data.bar.collected.find(i=>i.date==d)?.amount || 0);
+        const formattedDates = dates.map(formatMonth);
 
-        const barOpts = { ...commonOptions, series: [{ name: 'Billed', data: billed }, { name: 'Collected', data: collected }], xaxis: { categories: dates }, chart: { type: 'bar', height: 300 }, colors: ['#7367F0', '#28C76F'] };
+        const barOpts = { ...commonOptions, series: [{ name: 'Billed Amount', data: billed }, { name: 'Collected Revenue', data: collected }], xaxis: { categories: formattedDates }, chart: { type: 'bar', height: 300 }, colors: ['#7367F0', '#28C76F'] };
         renderChart('#billingBar', barOpts, 'bBar');
 
         // Pie
@@ -194,22 +155,6 @@ function loadBilling() {
     });
 }
 
-// 3. Supply Charts
-function loadSupply() {
-    fetchReport('supply', (data) => {
-        // Bar
-        const barOpts = { ...commonOptions, series: [{ name: 'Volume (Units)', data: data.bar.map(i => i.qty) }], xaxis: { categories: data.bar.map(i => i.date) }, chart: { type: 'bar', height: 300 }, colors: ['#00CFE8'] };
-        renderChart('#supplyBar', barOpts, 'sBar');
-
-        // Pie
-        const pieOpts = { ...commonOptions, series: data.pie.map(i => i.value), labels: data.pie.map(i => i.label), chart: { type: 'pie', height: 300 } };
-        renderChart('#supplyPie', pieOpts, 'sPie');
-
-        // Donut
-        const donutOpts = { ...commonOptions, series: data.donut.map(i => i.value), labels: data.donut.map(i => i.label), chart: { type: 'donut', height: 300 }, colors: ['#28C76F', '#EA5455'] };
-        renderChart('#supplyDonut', donutOpts, 'sDonut');
-    });
-}
 
 function renderChart(selector, options, id) {
     if(charts[id]) {

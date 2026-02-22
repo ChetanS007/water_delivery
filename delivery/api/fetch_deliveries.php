@@ -37,28 +37,26 @@ try {
     ];
 
     // Get Latest Active Van Log for this Delivery Boy
-    $vanQuery = $pdo->prepare("SELECT id, quantity, out_time, status FROM van_logs WHERE delivery_boy_id = ? AND status IN ('Pending', 'Out') ORDER BY created_at DESC LIMIT 1");
+    $vanQuery = $pdo->prepare("SELECT id, quantity, out_time, status, created_at FROM van_logs WHERE delivery_boy_id = ? AND status IN ('Pending', 'Out') ORDER BY created_at DESC LIMIT 1");
     $vanQuery->execute([$boy_id]);
     $activeVan = $vanQuery->fetch(PDO::FETCH_ASSOC);
 
     if ($activeVan) {
         $stats['total_cans'] = intval($activeVan['quantity']);
         
-        // Calculate Delivered Count based on Van Out Time
-        // Logic must match Admin Panel (van_management.php)
-        if ($activeVan['status'] === 'Out' && $activeVan['out_time']) {
-            $delQuery = $pdo->prepare("
-                SELECT COALESCE(SUM(oi.quantity), 0) 
-                FROM daily_deliveries dd
-                JOIN orders o ON dd.subscription_id = o.id
-                JOIN order_items oi ON o.id = oi.order_id
-                WHERE dd.delivery_boy_id = ? 
-                AND dd.status = 'Delivered' 
-                AND dd.delivered_at >= ?
-            ");
-            $delQuery->execute([$boy_id, $activeVan['out_time']]);
-            $stats['delivered_cans'] = intval($delQuery->fetchColumn());
-        }
+        // Count all deliveries done AFTER this van log was initialized
+        // This covers both 'Pending' and 'Out' states.
+        $delQuery = $pdo->prepare("
+            SELECT COALESCE(SUM(oi.quantity), 0) 
+            FROM daily_deliveries dd
+            JOIN orders o ON dd.subscription_id = o.id
+            JOIN order_items oi ON o.id = oi.order_id
+            WHERE dd.delivery_boy_id = ? 
+            AND dd.status = 'Delivered' 
+            AND dd.delivered_at >= ?
+        ");
+        $delQuery->execute([$boy_id, $activeVan['created_at']]); // Use created_at as baseline
+        $stats['delivered_cans'] = intval($delQuery->fetchColumn());
         
         $stats['remaining_cans'] = $stats['total_cans'] - $stats['delivered_cans'];
     }

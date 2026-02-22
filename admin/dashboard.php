@@ -18,18 +18,37 @@ $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
 $total_customers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $total_delivery_boys = $pdo->query("SELECT COUNT(*) FROM delivery_boys")->fetchColumn();
 
-// 2. Sales Analytics (Monthly Order Counts)
-$monthly_data = array_fill(1, 12, 0); // Jan to Dec
-$missing_data = []; // Simulated "Missing Water Can" data
-for($i=1; $i<=12; $i++) { $missing_data[] = rand(10, 50); } // Dummy data
+// New: Bill / Payment Stats
+$total_received = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE status = 'Approved'")->fetchColumn();
+$total_bill = $pdo->query("
+    SELECT COALESCE(SUM(oi.quantity * p.price), 0)
+    FROM daily_deliveries dd
+    JOIN orders o ON dd.subscription_id = o.id
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN products p ON oi.product_id = p.id
+    WHERE dd.status = 'Delivered'
+")->fetchColumn();
+$pending_bill = max(0, $total_bill - $total_received);
 
-$stmt = $pdo->prepare("SELECT MONTH(created_at) as m, COUNT(*) as c FROM orders WHERE YEAR(created_at) = YEAR(CURDATE()) GROUP BY m");
+// 2. Sales Analytics (Daily Delivered Cans for Current Month)
+$current_month_days = date('t'); // Number of days in current month
+$daily_data = array_fill(1, $current_month_days, 0);
+
+$stmt = $pdo->prepare("
+    SELECT DAY(dd.delivery_date) as d, SUM(oi.quantity) as c 
+    FROM daily_deliveries dd 
+    JOIN order_items oi ON dd.subscription_id = oi.order_id 
+    WHERE dd.status = 'Delivered' 
+    AND MONTH(dd.delivery_date) = MONTH(CURDATE()) 
+    AND YEAR(dd.delivery_date) = YEAR(CURDATE()) 
+    GROUP BY d
+");
 $stmt->execute();
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $monthly_data[$row['m']] = (int)$row['c'];
+    $daily_data[$row['d']] = (int)$row['c'];
 }
-$sales_analytics_json = json_encode(array_values($monthly_data));
-$missing_analytics_json = json_encode($missing_data);
+$sales_analytics_json = json_encode(array_values($daily_data));
+$analytics_labels_json = json_encode(range(1, $current_month_days));
 
 // 3. Recent Orders (Last 7 Days)
 $recent_days = [];
@@ -48,6 +67,15 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 }
 $recent_orders_days_json = json_encode($recent_days);
 $recent_orders_counts_json = json_encode(array_values($recent_counts));
+
+// Fetch Recent Orders for Table
+$recent_orders_table = $pdo->query("
+    SELECT o.id, u.full_name, o.total_amount, o.status, o.created_at 
+    FROM orders o 
+    JOIN users u ON o.user_id = u.id 
+    ORDER BY o.created_at DESC 
+    LIMIT 6
+")->fetchAll();
 
 // 4. Delivered vs Cancelled
 $delivered_count = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'Delivered'")->fetchColumn();
@@ -154,49 +182,71 @@ $can_increase = "1.2%";
         <span class="text-muted small"><?php echo date('d M Y'); ?></span>
     </div>
 
-    <!-- Top Stats Row (4 Cards) -->
+    <!-- Top Stats Row (6 Cards) -->
     <div class="row g-4 mb-4">
         <!-- Card 1: Sales -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Total Sales</div>
-                    <h4 class="stat-value">₹<?php echo number_format($total_sales); ?></h4>
+                    <h4 class="stat-value" id="statSales">₹<?php echo number_format($total_sales); ?></h4>
                 </div>
-                <div id="sparkSales" style="min-width: 90px;"></div>
+                <div id="sparkSales" style="min-width: 50px;"></div>
             </div>
         </div>
         
         <!-- Card 2: Orders -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Total Orders</div>
-                    <h4 class="stat-value"><?php echo number_format($total_orders); ?></h4>
+                    <h4 class="stat-value" id="statOrders"><?php echo number_format($total_orders); ?></h4>
                 </div>
-                <div id="sparkOrders" style="min-width: 90px;"></div>
+                <div id="sparkOrders" style="min-width: 50px;"></div>
             </div>
         </div>
         
         <!-- Card 3: Customers -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Total Customers</div>
-                    <h4 class="stat-value"><?php echo number_format($total_customers); ?></h4>
+                    <h4 class="stat-value" id="statCustomers"><?php echo number_format($total_customers); ?></h4>
                 </div>
-                <div id="sparkCustomers" style="min-width: 90px;"></div>
+                <div id="sparkCustomers" style="min-width: 50px;"></div>
             </div>
         </div>
         
         <!-- Card 4: Delivery Boys -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Total Delivery Boys</div>
-                    <h4 class="stat-value"><?php echo number_format($total_delivery_boys); ?></h4>
+                    <h4 class="stat-value" id="statBoys"><?php echo number_format($total_delivery_boys); ?></h4>
                 </div>
-                <div id="sparkDelivery" style="min-width: 90px;"></div>
+                <div id="sparkDelivery" style="min-width: 50px;"></div>
+            </div>
+        </div>
+
+        <!-- Card 5: Total Received -->
+        <div class="col-xl-2 col-md-4">
+            <div class="dashboard-card d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-title">Received Bill</div>
+                    <h4 class="stat-value text-success" id="statReceived">₹<?php echo number_format($total_received); ?></h4>
+                </div>
+                <div id="sparkReceived" style="min-width: 50px;"></div>
+            </div>
+        </div>
+
+        <!-- Card 6: Pending Bill -->
+        <div class="col-xl-2 col-md-4">
+            <div class="dashboard-card d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-title">Pending Bill</div>
+                    <h4 class="stat-value text-danger" id="statPending">₹<?php echo number_format($pending_bill); ?></h4>
+                </div>
+                <div id="sparkPending" style="min-width: 50px;"></div>
             </div>
         </div>
     </div>
@@ -207,13 +257,10 @@ $can_increase = "1.2%";
         <div class="col-lg-8">
             <div class="dashboard-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0 text-dark">Sales Analytics</h5>
+                    <h5 class="fw-bold mb-0 text-dark">Daily Deliveries (<?php echo date('F'); ?>)</h5>
                     <div class="d-flex gap-3">
                         <div class="d-flex align-items-center small">
-                            <span class="badge rounded-circle bg-primary me-2" style="width: 10px; height: 10px;"> </span> Total Water Can
-                        </div>
-                        <div class="d-flex align-items-center small">
-                            <span class="badge rounded-circle bg-info me-2" style="width: 10px; height: 10px;"> </span> Missing Water Can
+                            <span class="badge rounded-circle bg-primary me-2" style="width: 10px; height: 10px;"> </span> Delivered Cans
                         </div>
                     </div>
                 </div>
@@ -221,46 +268,15 @@ $can_increase = "1.2%";
             </div>
         </div>
 
-        <!-- Right Sidebar: Recent Orders -->
+        <!-- Right Sidebar: Recent Orders Bar Chart -->
         <div class="col-lg-4">
-            <!-- Recent Orders Chart Card -->
-            <div class="recent-orders-card mb-4">
-                <h5 class="fw-bold mb-3 text-white">Recent Orders</h5>
-                <div id="recentOrdersChart"></div>
-            </div>
-
-            <!-- Stats Below -->
-            <div class="dashboard-card">
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-success">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 fw-bold text-dark">Delivered Orders</h6>
-                                    <small class="text-success fw-bold"><?php echo $del_increase; ?> increased</small>
-                                </div>
-                            </div>
-                            <h5 class="fw-bold mb-0 text-dark"><?php echo $delivered_count; ?></h5>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-light-danger">
-                                    <i class="fa-solid fa-times"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 fw-bold text-dark">Cancelled Orders</h6>
-                                    <small class="text-danger fw-bold"><?php echo $can_increase; ?> increased</small>
-                                </div>
-                            </div>
-                            <h5 class="fw-bold mb-0 text-dark"><?php echo $cancelled_count; ?></h5>
-                        </div>
-                    </div>
+            <div class="dashboard-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0 text-dark">Day-wise Orders</h5>
+                    <span class="text-muted small">Last 7 Days</span>
                 </div>
+                <!-- Container for Bar Chart -->
+                <div id="recentOrdersChart" style="min-height: 350px;"></div>
             </div>
         </div>
     </div>
@@ -305,23 +321,36 @@ document.addEventListener('DOMContentLoaded', function () {
         tooltip: { fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
     }).render();
 
-    // --- Main Chart: Sales Analytics (Area + Line) ---
+    // 5. Sparkline Received (Green Line)
+    new ApexCharts(document.querySelector("#sparkReceived"), {
+        series: [{ data: [5, 10, 15, 12, 20, 18, 25] }],
+        chart: { type: 'line', height: 40, width: 60, sparkline: { enabled: true } },
+        stroke: { curve: 'smooth', width: 2 },
+        colors: ['#28C76F'],
+        tooltip: { fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
+    }).render();
+
+    // 6. Sparkline Pending (Red Line)
+    new ApexCharts(document.querySelector("#sparkPending"), {
+        series: [{ data: [20, 15, 10, 18, 12, 22, 16] }],
+        chart: { type: 'line', height: 40, width: 60, sparkline: { enabled: true } },
+        stroke: { curve: 'smooth', width: 2 },
+        colors: ['#EA5455'],
+        tooltip: { fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
+    }).render();
+
+    // --- Main Chart: Sales Analytics (Area) ---
     const salesOptions = {
         series: [
             {
-                name: 'Total Water Can',
-                type: 'area', // Purple Area
+                name: 'Delivered Cans',
+                type: 'area', 
                 data: <?php echo $sales_analytics_json; ?>
-            },
-            {
-                name: 'Missing Water Can',
-                type: 'line', // Cyan Line
-                data: <?php echo $missing_analytics_json; ?>
             }
         ],
         chart: {
             height: 350,
-            type: 'line', // Mixed type parent
+            type: 'area', 
             toolbar: { show: false },
             zoom: { enabled: false },
             fontFamily: 'Poppins'
@@ -329,22 +358,22 @@ document.addEventListener('DOMContentLoaded', function () {
         dataLabels: { enabled: false },
         stroke: {
             curve: 'smooth',
-            width: [0, 3], // 0 for area (border), 3 for line
+            width: 3, 
         },
         fill: {
-            type: ['gradient', 'solid'],
+            type: 'gradient',
             gradient: {
                 shadeIntensity: 1,
                 opacityFrom: 0.6,
                 opacityTo: 0.1,
                 stops: [0, 90, 100],
                 colorStops: [ { offset: 0, color: '#7367F0', opacity: 0.6 }, { offset: 100, color: '#7367F0', opacity: 0.1 } ]
-            },
-            solid: { opacity: 1 }
+            }
         },
-        colors: ['#7367F0', '#00CFE8'], // Purple, Cyan
+        colors: ['#7367F0'], 
         xaxis: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            categories: <?php echo $analytics_labels_json; ?>,
+            title: { text: 'Day of Month', style: { color: '#B9B9C3', fontSize: '10px' } },
             axisBorder: { show: false },
             axisTicks: { show: false },
             labels: { style: { colors: '#B9B9C3' } }
@@ -361,40 +390,90 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         legend: { show: false }
     };
-    new ApexCharts(document.querySelector("#salesAnalyticsChart"), salesOptions).render();
+    const salesChart = new ApexCharts(document.querySelector("#salesAnalyticsChart"), salesOptions);
+    salesChart.render();
 
-    // --- Right Sidebar: Recent Orders (Vertical Bar) ---
+    // --- Right Sidebar: Day-wise Orders (Vertical Bar Chart) ---
     const recentOptions = {
         series: [{
             name: 'Orders',
             data: <?php echo $recent_orders_counts_json; ?>
         }],
         chart: {
-            height: 220,
+            height: 350,
             type: 'bar',
             toolbar: { show: false },
             fontFamily: 'Poppins'
         },
         plotOptions: {
             bar: {
-                columnWidth: '40%',
-                borderRadius: 5,
-                distributed: true // allows simple color loop
+                columnWidth: '50%',
+                borderRadius: 7,
+                distributed: true
             }
         },
-        colors: ['#E8E7FD', '#A5A2F7', '#E8E7FD', '#A5A2F7', '#E8E7FD', '#A5A2F7', '#E8E7FD'], // Alternate light/dark purple/pinkish
+        colors: ['#7367F0', '#00CFE8', '#28C76F', '#FF9F43', '#EA5455', '#7367F0', '#00CFE8'],
         dataLabels: { enabled: false },
         legend: { show: false },
         xaxis: {
             categories: <?php echo $recent_orders_days_json; ?>,
             axisBorder: { show: false },
             axisTicks: { show: false },
-            labels: { style: { colors: '#fff' } }
+            labels: { style: { colors: '#B9B9C3' } }
         },
-        yaxis: { show: false },
-        grid: { show: false }
+        yaxis: {
+            labels: { style: { colors: '#B9B9C3' } }
+        },
+        grid: {
+            borderColor: '#f0f0f0',
+            strokeDashArray: 5,
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: true } }
+        }
     };
-    new ApexCharts(document.querySelector("#recentOrdersChart"), recentOptions).render();
+    const recentChart = new ApexCharts(document.querySelector("#recentOrdersChart"), recentOptions);
+    recentChart.render();
+
+
+    // --- Polling Logic ---
+    let lastDashboardData = null;
+
+    function refreshDashboard() {
+        fetch('api/dashboard_data.php')
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                const currentDataStr = JSON.stringify(res);
+                if (lastDashboardData === currentDataStr) return;
+                lastDashboardData = currentDataStr;
+
+                // Update Stats
+                document.getElementById('statSales').innerText = '₹' + res.stats.total_sales;
+                document.getElementById('statOrders').innerText = res.stats.total_orders;
+                document.getElementById('statCustomers').innerText = res.stats.total_customers;
+                document.getElementById('statBoys').innerText = res.stats.total_delivery_boys;
+                document.getElementById('statReceived').innerText = '₹' + res.stats.total_received;
+                document.getElementById('statPending').innerText = '₹' + res.stats.pending_bill;
+                document.getElementById('statDelivered').innerText = res.stats.delivered_count;
+                document.getElementById('statCancelled').innerText = res.stats.cancelled_count;
+
+                // Update Charts
+                salesChart.updateSeries([
+                    { name: 'Delivered Cans', data: res.charts.sales_analytics }
+                ]);
+
+                if(res.charts.recent_orders) {
+                    recentChart.updateSeries([{
+                        name: 'Orders',
+                        data: res.charts.recent_orders
+                    }]);
+                }
+            }
+        });
+    }
+
+    // Set polling interval (e.g., 30 seconds)
+    setInterval(refreshDashboard, 30000);
 });
 </script>
 

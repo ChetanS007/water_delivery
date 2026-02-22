@@ -1,16 +1,17 @@
 :root {
-    --primary-color: #4e73df;
-    --secondary-color: #858796;
+    --primary-color: #0E3A66;
+    /* Main brand blue */
+    --accent-blue: #2DB5E8;
+    --secondary-color: #718096;
     --success-color: #1cc88a;
     --info-color: #36b9cc;
     --warning-color: #f6c23e;
     --danger-color: #e74a3b;
     --light-color: #f8f9fc;
-    --dark-color: #2e3440;
-    /* Darker Nordic grey */
-    --sidebar-bg: #222831;
-    --sidebar-width: 250px;
-    --header-height: 70px;
+    --dark-color: #1A202C;
+    --sidebar-bg: #0E3A66;
+    --sidebar-width: 260px;
+    --header-height: 75px;
     --font-family: 'Inter', sans-serif;
 }
 
@@ -26,79 +27,76 @@ body {
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
-    background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+    background: linear-gradient(180deg, #0E3A66 0%, #1a324b 100%);
     color: white;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
     transition: all 0.3s ease;
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-brand {
     height: var(--header-height);
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
+    padding: 0 25px;
+    font-size: 1.25rem;
     font-weight: 700;
     color: white;
     text-decoration: none;
-    background: rgba(0, 0, 0, 0.1);
-    letter-spacing: 1px;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-brand i {
-    margin-right: 10px;
-    color: var(--info-color);
+    margin-right: 12px;
+    color: var(--accent-blue);
 }
 
 .sidebar-menu {
     list-style: none;
-    padding: 20px 0;
+    padding: 25px 0;
     margin: 0;
-}
-
-.sidebar-item {
-    padding: 0 15px;
-    margin-bottom: 5px;
 }
 
 .sidebar-link {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
-    color: rgba(255, 255, 255, 0.8);
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    margin: 2px 15px;
+    transition: all 0.2s ease;
     font-weight: 500;
+    font-size: 0.9rem;
 }
 
 .sidebar-link:hover,
 .sidebar-link.active {
     background: rgba(255, 255, 255, 0.1);
     color: white;
-    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-link i {
-    width: 25px;
-    margin-right: 10px;
+    width: 24px;
+    font-size: 1.1rem;
+    margin-right: 12px;
+    opacity: 0.8;
 }
 
 /* Header */
 .top-header {
     height: var(--header-height);
     background: white;
-    /* margin-left: var(--sidebar-width); */
-    /* Handled by layout wrapper */
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 0 35px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
     position: sticky;
     top: 0;
     z-index: 900;
@@ -227,7 +225,7 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
-        left: -250px;
+        left: -260px;
     }
 
     .sidebar.active {
@@ -236,11 +234,11 @@ body {
 
     .main-content {
         margin-left: 0;
+        padding: 20px 15px;
     }
 
-    .main-content.active {
-        margin-left: 0;
-        /* Overlay behavior usually preferred or push */
+    .top-header {
+        padding: 0 15px;
     }
 
     .sidebar-overlay {
@@ -257,4 +255,31 @@ body {
     .sidebar-overlay.active {
         display: block;
     }
+}
+
+/* Custom Table Styling */
+.table-responsive {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+    background-color: #f8fafc;
+    border-bottom: 2px solid #edf2f7;
+    color: #4a5568;
+    font-size: 0.8rem;
+    padding: 15px 20px;
+}
+
+.table tbody td {
+    padding: 15px 20px;
+}
+
+.badge {
+    font-weight: 600;
+    padding: 0.5em 0.8em;
+    border-radius: 8px;
+    font-size: 0.75rem;
 }

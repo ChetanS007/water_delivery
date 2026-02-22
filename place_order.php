@@ -39,11 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Check for existing active subscription (Pending, Approved, Assigned)
     $check_stmt = $pdo->prepare("SELECT id FROM orders WHERE user_id = ? AND status IN ('Pending', 'Approved', 'Assigned')");
     $check_stmt->execute([$user_id]);
     if ($check_stmt->rowCount() > 0) {
-        echo "<script>alert('You already have an active subscription request. Please wait for it to be processed.'); window.location.href='profile.php';</script>";
+        echo "<script>alert('तुमची आधीच एक विनंती प्रलंबित आहे. कृपया ती पूर्ण होईपर्यंत प्रतीक्षा करा.'); window.location.href='profile.php';</script>";
         exit();
     }
 
@@ -62,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$order_id, $product_id, $quantity, $price]);
 
         $pdo->commit();
-        echo "<script>alert('Subscription Request Sent Successfully! Awaiting Admin Approval.'); window.location.href='profile.php';</script>";
+        echo "<script>alert('सबस्क्रिप्शन विनंती यशस्वीरित्या पाठवली! ॲडमिनच्या मंजुरीची प्रतीक्षा आहे.'); window.location.href='profile.php';</script>";
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        echo "<script>alert('Failed to send request: " . $e->getMessage() . "'); window.location.href='index.php';</script>";
+        echo "<script>alert('विनंती पाठवण्यात त्रुटी आली: " . $e->getMessage() . "'); window.location.href='index.php';</script>";
     }
 }
 ?>

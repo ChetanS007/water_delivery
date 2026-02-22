@@ -220,6 +220,7 @@
 // Global Variables
 let map, marker, debounceTimer;
 let searchTimeout = null;
+let lastUserData = null;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -233,6 +234,15 @@ document.addEventListener('DOMContentLoaded', () => {
             detectLocation(true); // Auto-detect for new users
         }
     });
+
+    // Polling for updates
+    setInterval(() => {
+        const modal = document.getElementById('userModal');
+        const isModalOpen = modal.classList.contains('show');
+        if (!isModalOpen && !searchTimeout) {
+            loadUsers(1, true);
+        }
+    }, 10000);
 
     // Event Listeners
     document.getElementById('statusFilter').addEventListener('change', () => loadUsers(1));
@@ -332,18 +342,25 @@ function detectLocation(isAuto = false) {
 }
 
 // --- CRUD Functions ---
-function loadUsers(page = 1) {
+function loadUsers(page = 1, isPoll = false) {
     const search = document.getElementById('searchInput').value;
     const status = document.getElementById('statusFilter').value;
     const tbody = document.getElementById('userTableBody');
     const pagination = document.getElementById('pagination');
-
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+    
+    if(!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastUserData = null;
+    }
 
     fetch(`api/users.php?action=fetch_all&page=${page}&search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`)
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastUserData === currentDataStr) return; // No Change
+            lastUserData = currentDataStr;
+
             tbody.innerHTML = '';
             if(res.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No customers found.</td></tr>';

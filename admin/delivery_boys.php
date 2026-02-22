@@ -123,8 +123,18 @@
 </div>
 
 <script>
+let lastBoyData = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadBoys();
+
+    // Polling
+    setInterval(() => {
+        const modal = document.getElementById('boyModal');
+        const isModalOpen = modal && modal.classList.contains('show');
+        if (!isModalOpen) {
+            loadBoys(1, true);
+        }
+    }, 15000);
     
     // Search Debounce
     let timer;
@@ -151,15 +161,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function loadBoys(page = 1) {
+function loadBoys(page = 1, isPoll = false) {
     const search = document.getElementById('searchInput').value;
     const tbody = document.getElementById('boyTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+    
+    if(!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastBoyData = null;
+    }
 
     fetch(`api/delivery_boys.php?action=fetch_all&page=${page}&search=${encodeURIComponent(search)}`)
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastBoyData === currentDataStr) return;
+            lastBoyData = currentDataStr;
+
             tbody.innerHTML = '';
             if(res.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No delivery partners found.</td></tr>';

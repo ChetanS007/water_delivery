@@ -17,17 +17,17 @@ try {
         <div class="row align-items-center">
             <!-- Left Side -->
             <div class="col-lg-5 mb-5 mb-lg-0 animate-on-scroll">
-                <span class="d-block text-primary fw-bold text-uppercase fs-6 mb-3 font-subheading" style="letter-spacing: 2px;">Welcome into Sudha Jal</span>
-                <h1 class="hero-title text-dark">Pure & Healthy<br><span class="text-primary">Drinking Water</span></h1>
+                <span class="d-block text-primary fw-bold text-uppercase fs-6 mb-3 font-subheading" style="letter-spacing: 1px;">सुधा जल प्लेटिनम प्लेटेड आयोनाइज़्ड हाइड्रोजन वॉटर</span>
+                <h1 class="hero-title text-dark">शुद्ध आणि आरोग्यदायी<br><span class="text-primary">पिण्याचे पाणी</span></h1>
                 <p class="lead text-muted mb-5 pe-lg-5">
-                    We deliver the purest natural mineral water directly to your doorstep. Experience hydration like never before.
+                    आम्ही सर्वात शुद्ध नैसर्गिक खनिज पाणी थेट तुमच्या दारापर्यंत पोहोचवतो. हायड्रेशनचा असा अनुभव आधी कधीही घेतला नसेल.
                 </p>
                 <div class="d-flex gap-3">
-                    <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">ORDER TODAY</button>
-                    <button class="btn btn-secondary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#loginModal">BUY BOTTLE</button>
+                    <!-- <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">आजच ऑर्डर करा</button> -->
+                    <button class="btn btn-secondary shadow-lg icon-link-hover" onclick="window.location.href='#products'">बाटली खरेदी करा</button>
                 </div> 
             </div>
-              
+                      
             <!-- Right Side -->
             <div class="col-lg-7 text-center position-relative animate-on-scroll">
                 <div class="hero-image-wrapper">
@@ -43,7 +43,7 @@ try {
 <section id="features" class="trust-section">
     <div class="container">
         <div class="section-title animate-on-scroll">
-            <h2>A Trusted Name In<br>Bottled Water Industry</h2>
+            <h2>बॉटल पाणी उद्योगातील<br>एक विश्वासार्ह नाव</h2>
             <div class="divider mx-auto bg-primary rounded-pill mt-3" style="width: 80px; height: 4px;"></div>
         </div>
 
@@ -52,8 +52,8 @@ try {
             <div class="col-lg-3 col-md-6 animate-on-scroll delay-1">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-droplet"></i></div>
-                    <h4 class="feature-title">Maximum Purity</h4>
-                    <p class="text-muted small mb-3">7-stage advanced filtration for crystal clear water.</p>
+                    <h4 class="feature-title">जास्तीत जास्त शुद्धता</h4>
+                    <p class="text-muted small mb-3">स्फटिकासारख्या स्वच्छ पाण्यासाठी ७-टप्प्यांची प्रगत गाळण प्रक्रिया.</p>
                     <!-- <a href="#" class="read-more">Read More <i class="fa-solid fa-arrow-right ms-1"></i></a> -->
                 </div>
             </div>
@@ -61,8 +61,8 @@ try {
             <div class="col-lg-3 col-md-6 animate-on-scroll delay-2">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-flask"></i></div>
-                    <h4 class="feature-title">5 Steps Filtration</h4>
-                    <p class="text-muted small mb-3">Rigorous process to remove all impurities safely.</p>
+                    <h4 class="feature-title">५ टप्प्यांची गाळण</h4>
+                    <p class="text-muted small mb-3">सर्व अशुद्धता सुरक्षितपणे काढून टाकण्यासाठी कठोर प्रक्रिया.</p>
                     <!-- <a href="#" class="read-more">Read More <i class="fa-solid fa-arrow-right ms-1"></i></a> -->
                 </div>
             </div>
@@ -70,8 +70,8 @@ try {
             <div class="col-lg-3 col-md-6 animate-on-scroll delay-3">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-leaf"></i></div>
-                    <h4 class="feature-title">Chlorine Free</h4>
-                    <p class="text-muted small mb-3">100% chemical-free for the healthiest taste.</p>
+                    <h4 class="feature-title">क्लोरीन मुक्त</h4>
+                    <p class="text-muted small mb-3">आरोग्यदायी चवीसाठी १००% रसायने विरहित पाणी.</p>
                     <!-- <a href="#" class="read-more">Read More <i class="fa-solid fa-arrow-right ms-1"></i></a> -->
                 </div>
             </div>
@@ -79,8 +79,8 @@ try {
             <div class="col-lg-3 col-md-6 animate-on-scroll delay-4">
                  <div class="feature-card">
                     <div class="feature-icon"><i class="fa-solid fa-award"></i></div>
-                    <h4 class="feature-title">Quality Certified</h4>
-                    <p class="text-muted small mb-3">ISO certified standards for your peace of mind.</p>
+                    <h4 class="feature-title">गुणवत्ता प्रमाणित</h4>
+                    <p class="text-muted small mb-3">तुमच्या समाधानासाठी आयएसओ (ISO) प्रमाणित मानके.</p>
                     <!-- <a href="#" class="read-more">Read More <i class="fa-solid fa-arrow-right ms-1"></i></a> -->
                 </div>
             </div>
@@ -92,8 +92,8 @@ try {
 <section id="products" class="products-section">
     <div class="container">
         <div class="section-title text-center mb-5 animate-on-scroll">
-            <h6 class="text-primary fw-bold text-uppercase font-subheading mb-2">Our Shop</h6>
-            <h2>Bottles We Deliver</h2>
+            <h6 class="text-primary fw-bold text-uppercase font-subheading mb-2">आमचे दुकान</h6>
+            <h2>आम्ही पोहोचवत असलेल्या पाण्याच्या बाटल्या</h2>
         </div>
 
         <div class="row g-4 justify-content-center">
@@ -115,7 +115,7 @@ try {
                                 data-bs-toggle="modal" data-bs-target="#loginModal"
                             <?php endif; ?>
                         >
-                            Subscribe Now <i class="fa-solid fa-cart-shopping ms-2"></i>
+                            आत्ताच सबस्क्राईब करा <i class="fa-solid fa-cart-shopping ms-2"></i>
                         </button>
                     </div>
                 </div>
@@ -127,15 +127,60 @@ try {
 <!-- 5. HELPING SECTION -->
 <section class="helping-section">
     <div class="container">
-        <div class="row align-items-center animate-on-scroll">
-            <div class="col-lg-6">
-                <h2 class="display-5 text-dark mb-4">Helping To Improve</h2>
+        <div class="row align-items-center animate-on-scroll mb-5">
+            <div class="col-lg-7">
+                <h6 class="text-primary fw-bold text-uppercase font-subheading mb-2">आरोग्यदायी फायदे</h6>
+                <h2 class="display-5 text-dark mb-4">लोक सुधा जल हायड्रोजन वॉटरच का पित आहेत?</h2>
                 <div class="bg-primary rounded-pill mb-4" style="width: 60px; height: 4px;"></div>
+                <p class="text-muted lead" style="font-size: 1.15rem;">
+                    आम्ही केवळ पाणीच पोहोचवत नाही, तर तुमच्या आरोग्याला प्राधान्य देतो. आमचे आयोनाइज़्ड हायड्रोजन पाणी खालीलप्रमाणे सुधारणा करण्यास मदत करते.
+                </p>
             </div>
-            <div class="col-lg-6">
-                 <p class="text-muted lead" style="font-size: 1.1rem;">
-                     We are committed to providing sustainable hydration solutions. Our bottles are recyclable, and our delivery process is optimized to reduce carbon footprint.
-                 </p>
+            <div class="col-lg-5 d-none d-lg-block text-end">
+                <img src="assets/img/helping-water.png" onerror="this.src='assets/img/double-bottle.png'" class="img-fluid rounded-4" alt="Helping" style="max-height: 250px; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));">
+            </div>
+        </div>
+
+        <div class="benefit-grid animate-on-scroll">
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                <h6 class="benefit-label">रोगप्रतिकारक शक्ती वाढवते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <h6 class="benefit-label">अँटी-एजिंग</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-brain"></i></div>
+                <h6 class="benefit-label">स्मरणशक्ती सुधारते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                <h6 class="benefit-label">रक्तदाब नियंत्रित करण्यास मदत करते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-vial-circle-check"></i></div>
+                <h6 class="benefit-label">अॅसिडिटी कमी करते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-moon"></i></div>
+                <h6 class="benefit-label">झोप सुधारते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-filter"></i></div>
+                <h6 class="benefit-label">डिटॉक्सिफिकेशन</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-weight-scale"></i></div>
+                <h6 class="benefit-label">वजन कमी करण्यास मदत करते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-apple-whole"></i></div>
+                <h6 class="benefit-label">मधुमेह टाळण्यास मदत करते</h6>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon"><i class="fa-solid fa-dna"></i></div>
+                <h6 class="benefit-label">कर्करोग टाळण्यास मदत करते</h6>
             </div>
         </div>
     </div>
@@ -146,7 +191,7 @@ try {
 <section class="composition-section">
     <div class="container animate-on-scroll">
         <div class="section-title text-center mb-5">
-            <h2 class="display-5" style="letter-spacing: -1px; text-transform: capitalize;"> Basic Water<br>Composition</h2>
+            <h2 class="display-5" style="letter-spacing: -1px; text-transform: capitalize;">पाण्याचे मूलभूत घटक</h2>
             <div class="divider mx-auto bg-warning rounded-pill mt-4" style="width: 40px; height: 3px;">~</div>
         </div>
         
@@ -154,16 +199,16 @@ try {
             <!-- Left Side Composition Details -->
             <div class="col-lg-3 text-center text-lg-end mb-5 mb-lg-0 order-2 order-lg-1">
                 <div class="composition-item mb-5 pe-lg-5 position-relative">
-                    <h4 class="font-heading fw-bold mb-1">Potassium</h4>
+                    <h4 class="font-heading fw-bold mb-1">पोटॅशियम</h4>
                     <h6 class="text-dark fw-bold mb-2">2.5 mg/L</h6>
-                    <p class="text-muted small lh-sm mb-0">To purify water 2.5mg potassium is<br>needed for every litter.</p>
+                    <p class="text-muted small lh-sm mb-0">पाणी शुद्ध करण्यासाठी प्रत्येक लिटरमागे २.५ मिलीग्राम पोटॅशियम आवश्यक असते.</p>
                     <div class="composition-line-left d-none d-lg-block"></div>
                 </div>
                 
                 <div class="composition-item pe-lg-5 position-relative mt-5 pt-4">
-                    <h4 class="font-heading fw-bold mb-1">Fluoride</h4>
+                    <h4 class="font-heading fw-bold mb-1">फ्लोराईड</h4>
                     <h6 class="text-dark fw-bold mb-2">0.5 mg/L</h6>
-                    <p class="text-muted small lh-sm mb-0">0.5mg fluoride is needed to purify 1<br>litter of water.</p>
+                    <p class="text-muted small lh-sm mb-0">१ लिटर पाणी शुद्ध करण्यासाठी ०.५ मिलीग्राम फ्लोराईड आवश्यक आहे.</p>
                     <div class="composition-line-left d-none d-lg-block" style="top: 40%;"></div>
                 </div>
             </div>
@@ -181,16 +226,16 @@ try {
             <!-- Right Side Composition Details -->
             <div class="col-lg-3 text-center text-lg-start mb-5 mb-lg-0 order-3 order-lg-3">
                 <div class="composition-item mb-5 ps-lg-5 position-relative">
-                    <h4 class="font-heading fw-bold mb-1">Chloride</h4>
-                    <h6 class="text-dark fw-bold mb-2">350a mg/L</h6>
-                    <p class="text-muted small lh-sm mb-0">To purify water give 350a mg<br>chlorine for every litter of water...</p>
+                    <h4 class="font-heading fw-bold mb-1">क्लोराईड</h4>
+                    <h6 class="text-dark fw-bold mb-2">350 mg/L</h6>
+                    <p class="text-muted small lh-sm mb-0">पाणी शुद्ध करण्यासाठी प्रत्येक लिटरमागे ३५० मिलीग्राम क्लोरीन द्यावे लागते...</p>
                     <div class="composition-line-right d-none d-lg-block"></div>
                 </div>
 
                 <div class="composition-item ps-lg-5 position-relative mt-5 pt-4">
-                    <h4 class="font-heading fw-bold mb-1">Magnesium</h4>
+                    <h4 class="font-heading fw-bold mb-1">मॅग्नेशियम</h4>
                     <h6 class="text-dark fw-bold mb-2">14.5 mg/L</h6>
-                    <p class="text-muted small lh-sm mb-0">14.5mg of magnesium will be<br>required to purify every litter...</p>
+                    <p class="text-muted small lh-sm mb-0">प्रत्येक लिटर शुद्ध करण्यासाठी १४.५ मिलीग्राम मॅग्नेशियम आवश्यक असेल...</p>
                     <div class="composition-line-right d-none d-lg-block" style="top: 40%;"></div>
                 </div>
             </div>
@@ -199,22 +244,22 @@ try {
         <!-- Bottom Stats Row -->
         <div class="row text-center justify-content-center pt-5 mt-4">
              <div class="col-6 col-md-3 mb-4 position-relative">
-                 <h5 class="font-heading fw-bold mb-1 text-dark">Nitrates</h5>
+                 <h5 class="font-heading fw-bold mb-1 text-dark">नायट्रेट्स</h5>
                  <span class="text-muted small fw-bold">2 mg/L</span>
                  <div class="vr position-absolute end-0 top-50 translate-middle-y h-50 d-none d-md-block opacity-25"></div>
              </div>
              <div class="col-6 col-md-3 mb-4 position-relative">
-                 <h5 class="font-heading fw-bold mb-1 text-dark">Bicarbonates</h5>
+                 <h5 class="font-heading fw-bold mb-1 text-dark">बायकार्बोनेट्स</h5>
                  <span class="text-muted small fw-bold">157 mg/L</span>
                  <div class="vr position-absolute end-0 top-50 translate-middle-y h-50 d-none d-md-block opacity-25"></div>
              </div>
              <div class="col-6 col-md-3 mb-4 position-relative">
-                 <h5 class="font-heading fw-bold mb-1 text-dark">Sulphates</h5>
+                 <h5 class="font-heading fw-bold mb-1 text-dark">सल्फेट्स</h5>
                  <span class="text-muted small fw-bold">5.6 mg/L</span>
                  <div class="vr position-absolute end-0 top-50 translate-middle-y h-50 d-none d-md-block opacity-25"></div>
              </div>
              <div class="col-6 col-md-3 mb-4">
-                 <h5 class="font-heading fw-bold mb-1 text-dark">Sodium</h5>
+                 <h5 class="font-heading fw-bold mb-1 text-dark">सोडियम</h5>
                  <span class="text-muted small fw-bold">0.4 mg/L</span>
              </div>
         </div>
@@ -226,18 +271,18 @@ try {
     <div class="container animate-on-scroll">
         <div class="row align-items-center">
             <div class="col-lg-7">
-                <h6 class="text-warning text-uppercase fw-bold mb-2">Premium Service</h6>
-                <h2 class="display-5 fw-bold mb-4">Bottled Water Delivery<br>& Service</h2>
+                <h6 class="text-warning text-uppercase fw-bold mb-2">प्रीमियम सेवा</h6>
+                <h2 class="display-5 fw-bold mb-4">पाण्याच्या बाटल्यांची डिलिव्हरी<br>आणि सेवा</h2>
                 
                 <ul class="cta-list">
-                    <li><i class="fa-solid fa-circle-check"></i> Free delivery for subscription plans</li>
-                    <li><i class="fa-solid fa-circle-check"></i> 24/7 Customer support</li>
-                    <li><i class="fa-solid fa-circle-check"></i> No hidden charges</li>
+                    <li><i class="fa-solid fa-circle-check"></i> सबस्क्रिप्शन प्लॅन्ससाठी मोफत डिलिव्हरी</li>
+                    <li><i class="fa-solid fa-circle-check"></i> २४/७ ग्राहक सेवा</li>
+                    <li><i class="fa-solid fa-circle-check"></i> कोणतेही लपलेले शुल्क नाही</li>
                 </ul>
 
                 <div class="d-flex gap-3 mt-4">
-                    <button class="btn btn-primary shadow icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">Order Now</button>
-                    <button class="btn btn-secondary shadow icon-link-hover">Free Estimate</button>
+                    <button class="btn btn-primary shadow icon-link-hover" onclick="window.location.href='#products'">आत्ताच ऑर्डर करा</button>
+                    <!-- <button class="btn btn-secondary shadow icon-link-hover">विनामूल्य अंदाज</button> -->
                 </div>
             </div>
             <div class="col-lg-5 d-none d-lg-block position-relative">
@@ -249,36 +294,54 @@ try {
 </section>
 
 <!-- 8. TESTIMONIALS SECTION -->
+<?php
+$testimonials = [];
+try {
+    $testimonials_stmt = $pdo->query("SELECT * FROM testimonials ORDER BY created_at DESC");
+    $testimonials = $testimonials_stmt->fetchAll();
+} catch (Exception $e) {}
+?>
 <section class="testimonials-section">
     <div class="container">
-        <div class="section-title mb-5 animate-on-scroll">
-            <h6 class="text-primary text-uppercase fw-bold mb-2">Feedback</h6>
-            <h2>Our Testimonials</h2>
+        <div class="section-title mb-5 animate-on-scroll text-center">
+            <h6 class="text-primary text-uppercase fw-bold mb-2">अभिप्राय</h6>
+            <h2>आमचे प्रशंसापत्र</h2>
         </div>
 
+        <?php if (!empty($testimonials)): ?>
         <div id="testimonialCarousel" class="carousel slide testimonial-card animate-on-scroll" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <div class="stars fs-4">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                <?php foreach ($testimonials as $index => $t): ?>
+                    <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                        <div class="stars fs-4">
+                            <?php for($i=1; $i<=5; $i++): ?>
+                                <i class="fa-<?php echo $i <= $t['rating'] ? 'solid' : 'regular'; ?> fa-star text-warning"></i>
+                            <?php endfor; ?>
+                        </div>
+                        <p class="testimonial-text">"<?php echo htmlspecialchars($t['content']); ?>"</p>
+                        <div class="avatars-box mt-4">
+                            <img src="<?php echo !empty($t['photo_url']) ? htmlspecialchars($t['photo_url']) : 'https://img.freepik.com/free-photo/cheerful-indian-businessman-smiling-closeup-portrait-jobs-career-campaign_53876-129416.jpg'; ?>" alt="<?php echo htmlspecialchars($t['name']); ?>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                        </div>
+                        <h5 class="mt-3 fw-bold text-primary"><?php echo htmlspecialchars($t['name']); ?></h5>
+                        <small class="text-muted">आनंदी ग्राहक</small>
                     </div>
-                    <p class="testimonial-text">"The water tastes amazing and the delivery is always punctual. Highly recommended for families!"</p>
-                    <div class="avatars-box mt-4">
-                        <img src="https://img.freepik.com/free-photo/cheerful-indian-businessman-smiling-closeup-portrait-jobs-career-campaign_53876-129416.jpg?t=st=1771673318~exp=1771676918~hmac=30aa93d38c7ae92f7e314eb55c6235c0506b6f950a50f1259fe01fc0d68a5219&w=1480" alt="Client 1">
-                        <img src="https://img.freepik.com/premium-photo/studio-portrait-young-cheerful-woman_53876-44835.jpg" alt="Client 2">
-                    </div>
-                    <h5 class="mt-3 fw-bold text-primary">Aaksh & Divya</h5>
-                    <small class="text-muted">Loyal Customers</small>
-                </div>
-                <!-- Add more items if needed -->
+                <?php endforeach; ?>
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon bg-primary rounded-circle" aria-hidden="true"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon bg-primary rounded-circle" aria-hidden="true"></span>
-            </button>
+            
+            <?php if (count($testimonials) > 1): ?>
+                <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                </button>
+            <?php endif; ?>
         </div>
+        <?php else: ?>
+            <div class="text-center py-5">
+                <p class="text-muted">आमचे ग्राहक आमच्यावर प्रेम करतात! तुमचा अनुभव शेअर करणारे पहिले व्हा.</p>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
  
@@ -286,26 +349,26 @@ try {
 <!-- 11. FOOTER -->
 <?php include 'includes/footer.php'; ?>
 
-<!-- Modals (Copied from previous iteration) -->
+<!-- Modals -->
 <div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content glass-card p-4">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold text-dark">Login</h5>
+                <h5 class="modal-title fw-bold text-dark">लॉगिन</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form action="auth_action.php" method="POST">
                     <input type="hidden" name="action" value="login">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Mobile Number</label>
-                        <input type="text" name="mobile" class="form-control rounded-pill px-3 bg-light border-0" placeholder="10-digit mobile" required>
+                        <label class="form-label text-muted small fw-bold">मोबाईल नंबर</label>
+                        <input type="text" name="mobile" class="form-control rounded-pill px-3 bg-light border-0" placeholder="१०-अंकी मोबाईल नंबर" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Password</label>
+                        <label class="form-label text-muted small fw-bold">पासवर्ड</label>
                         <input type="password" name="password" class="form-control rounded-pill px-3 bg-light border-0" placeholder="******" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">Login</button>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">लॉगिन करा</button>
                 </form>
             </div>
         </div>
@@ -317,7 +380,7 @@ try {
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content glass-card p-0">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">New Customer Registration</h5>
+                <h5 class="modal-title fw-bold">नवीन ग्राहक नोंदणी</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
@@ -328,41 +391,41 @@ try {
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Full Name</label>
+                            <label class="form-label">पूर्ण नाव</label>
                             <input type="text" name="full_name" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Mobile Number</label>
+                            <label class="form-label">मोबाईल नंबर</label>
                             <input type="text" name="mobile" class="form-control" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Customer Type</label>
+                            <label class="form-label">ग्राहकाचा प्रकार</label>
                             <select name="customer_type" class="form-select" required>
-                                <option value="Home">Home</option>
-                                <option value="Shop">Shop</option>
+                                <option value="Home">घर (Home)</option>
+                                <option value="Shop">दुकान (Shop)</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Password</label>
+                            <label class="form-label">पासवर्ड</label>
                             <input type="password" name="password" class="form-control" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Address</label>
+                        <label class="form-label">पत्ता</label>
                         <textarea name="address" class="form-control" rows="2" required></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Pin Your Location (Drag Marker)</label>
+                        <label class="form-label">तुमचे स्थान निवडा (मार्कर ड्रॅग करा)</label>
                         <div id="map" style="height: 300px; border-radius: 10px;"></div>
-                        <small class="text-muted">Allow location access for better accuracy.</small>
+                        <small class="text-muted">अधिक अचूकतेसाठी स्थान प्रवेशाची (Location Access) परवानगी द्या.</small>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Register</button>
+                    <button type="submit" class="btn btn-primary w-100">नोंदणी करा</button>
                 </form>
             </div>
         </div>
@@ -374,7 +437,7 @@ try {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg p-0" style="overflow: hidden;">
             <div class="modal-header border-0 bg-primary text-white p-4">
-                <h5 class="modal-title fw-bold">Subscribe Now</h5>
+                <h5 class="modal-title fw-bold">आत्ताच सबस्क्राईब करा</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4 bg-white">
@@ -384,32 +447,34 @@ try {
                     
                     <div class="text-center mb-4">
                         <h4 id="modal_product_name" class="fw-bold mb-1 text-primary"></h4>
-                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 border border-success">In Stock</span>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 border border-success">स्टॉकमध्ये आहे</span>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted text-uppercase">Frequency</label>
+                        <label class="form-label small fw-bold text-muted text-uppercase">वारंवारता (Frequency)</label>
                         <select name="order_type" class="form-select rounded-pill bg-light border-0" onchange="toggleCustomDays(this.value)">
-                            <option value="Daily">Daily Delivery</option>
-                            <option value="Alternate">Alternate Days</option>
-                            <option value="Custom">Custom Days</option>
+                            <option value="Daily">दररोज डिलिव्हरी</option>
+                            <option value="Alternate">एक दिवसाआड</option>
+                            <option value="Custom">निवडक दिवस</option>
                         </select>
                     </div>
 
                      <div class="mb-3 d-none" id="customDaysDiv">
-                        <label class="form-label small fw-bold text-muted">Select Days</label>
+                        <label class="form-label small fw-bold text-muted">दिवस निवडा</label>
                         <div class="d-flex flex-wrap gap-2">
-                             <?php $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; ?>
-                             <?php foreach($days as $day): ?>
+                             <?php 
+                             $days_en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                             $days_mr = ['सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनी', 'रवी'];
+                             foreach($days_en as $index => $day): ?>
                                 <input type="checkbox" class="btn-check" name="days[]" value="<?php echo $day; ?>" id="day-<?php echo $day; ?>" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="day-<?php echo $day; ?>"><?php echo $day; ?></label>
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="day-<?php echo $day; ?>"><?php echo $days_mr[$index]; ?></label>
                              <?php endforeach; ?>
                         </div>
                     </div>
 
                     <div class="row align-items-center mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Quantity</label>
+                            <label class="form-label small fw-bold text-muted text-uppercase">प्रमाण (Quantity)</label>
                             <div class="input-group">
                                 <button class="btn btn-outline-secondary rounded-start-pill" type="button" onclick="document.getElementById('orderQty').stepDown(); updateSummary();">-</button>
                                 <input type="number" name="quantity" id="orderQty" class="form-control text-center border-secondary" value="1" min="1" onchange="updateSummary()">
@@ -420,23 +485,23 @@ try {
                     
                     <div class="bg-light p-3 rounded-4 mb-3 border border-dashed">
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Subtotal</span>
+                            <span class="text-muted small">उप-एकूण (Subtotal)</span>
                             <span class="fw-bold small" id="summarySubtotal">₹0.00</span>
                         </div>
                         <div class="d-flex justify-content-between mb-1 text-success">
-                            <span class="small">Discount</span>
+                            <span class="small">सवलत (Discount)</span>
                             <span class="fw-bold small" id="summaryDiscount">-₹0.00</span>
                         </div>
                         <div class="border-top pt-2 d-flex justify-content-between align-items-center mt-2">
-                            <span class="fw-bold text-dark">Total</span>
+                            <span class="fw-bold text-dark">एकूण (Total)</span>
                             <span class="fw-bolder fs-5 text-primary" id="summaryTotal">₹0.00</span>
                         </div>
                     </div>
 
                     <div class="mb-4">
                          <div class="input-group">
-                            <input type="text" id="offerCodeInput" name="offer_code_input" class="form-control rounded-start-pill ps-3 bg-light border-0" placeholder="Promo Code">
-                            <button type="button" class="btn btn-dark rounded-end-pill px-4" onclick="applyOffer()">Apply</button>
+                            <input type="text" id="offerCodeInput" name="offer_code_input" class="form-control rounded-start-pill ps-3 bg-light border-0" placeholder="प्रोमो कोड">
+                            <button type="button" class="btn btn-dark rounded-end-pill px-4" onclick="applyOffer()">लागू करा</button>
                         </div>
                         <small id="offerMessage" class="d-block mt-1 ms-2"></small>
                     </div>
@@ -444,7 +509,7 @@ try {
                     <input type="hidden" name="offer_code" id="finalOfferCode">
                     <input type="hidden" name="discount_amount" id="finalDiscountAmount" value="0">
 
-                    <button type="submit" class="btn btn-secondary w-100 rounded-pill py-3 fw-bold shadow text-white text-uppercase letter-spacing-1">Confirm Subscription</button>
+                    <button type="submit" class="btn btn-secondary w-100 rounded-pill py-3 fw-bold shadow text-white text-uppercase letter-spacing-1">सबस्क्रिप्शनची पुष्टी करा</button>
                 </form>
             </div>
         </div>
@@ -532,7 +597,7 @@ try {
         
         // Show loading state in address box
         const addressBox = document.querySelector('textarea[name="address"]');
-        addressBox.value = "Fetching location address...";
+        addressBox.value = "पत्ता मिळवत आहे...";
 
         // Reverse Geocoding via Nominatim
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
@@ -541,13 +606,13 @@ try {
                 if(data && data.display_name) {
                     addressBox.value = data.display_name;
                 } else {
-                    addressBox.value = "Address details not found. Please type manually.";
+                    addressBox.value = "पत्त्याचा तपशील सापडला नाही. कृपया स्वतः टाईप करा.";
                 }
             })
             .catch(err => {
                 console.error("Geocoding error:", err);
                 addressBox.value = ""; 
-                addressBox.placeholder = "Could not fetch address. Please enter manually.";
+                addressBox.placeholder = "पत्ता मिळवता आला नाही. कृपया मॅन्युअली प्रविष्ट करा.";
             });
     }
 

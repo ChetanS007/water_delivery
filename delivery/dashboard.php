@@ -31,10 +31,31 @@ $deliveries = [];
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <style>
-        #map { height: 75vh; width: 100%; border-radius: 10px; }
-        .nav-tabs .nav-link { color: #495057; }
-        .nav-tabs .nav-link.active { font-weight: bold; color: #0d6efd; }
-        .leaflet-routing-container { max-height: 200px; overflow-y: auto; }
+        :root {
+            --brand-primary: #0E3A66;
+            --brand-accent: #2DB5E8;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        #map { height: 75vh; width: 100%; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .nav-tabs { border-bottom: none; gap: 10px; }
+        .nav-tabs .nav-link { 
+            border: none; 
+            border-radius: 12px; 
+            background: #fff; 
+            color: #64748b; 
+            font-weight: 500; 
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .nav-tabs .nav-link.active { 
+            background: var(--brand-primary); 
+            color: #fff !important; 
+            box-shadow: 0 4px 12px rgba(14, 58, 102, 0.2);
+        }
+        .stat-card { border-radius: 16px; transition: transform 0.2s; }
+        .stat-card:active { transform: scale(0.95); }
+        .leaflet-routing-container { max-height: 150px; overflow-y: auto; border-radius: 10px; font-size: 11px; }
+        .navbar { background: linear-gradient(90deg, #0E3A66 0%, #1a324b 100%) !important; }
     </style>
 </head>
 <body class="bg-light">
@@ -43,29 +64,29 @@ $deliveries = [];
     <div class="container">
         <span class="navbar-brand">
             <i class="fa-solid fa-motorcycle me-2"></i>
-            Welcome, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Partner'); ?>
+            स्वागत आहे, <?php echo htmlspecialchars($_SESSION['name'] ?? 'जोडीदार'); ?>
         </span>
-        <a href="../logout.php" class="btn btn-sm btn-outline-light">Logout</a>
+        <a href="../logout.php" class="btn btn-sm btn-outline-light">बाहेर पडा</a>
     </div>
 </nav>
 
 <!-- Stats -->
     <div class="row g-3 mb-4 px-2 text-center">
         <div class="col-4">
-            <div class="card bg-primary text-white border-0 shadow-sm py-2">
-                <h6 class="small mb-1">Total Cans </h6>
+            <div class="card stat-card text-white border-0 shadow-sm py-2" style="background: linear-gradient(135deg, #0E3A66 0%, #1a324b 100%);">
+                <h6 class="small mb-1 opacity-75">एकूण कॅन</h6>
                 <h3 class="fw-bold mb-0" id="statTotal">0</h3>
             </div>
         </div>
         <div class="col-4">
-            <div class="card bg-success text-white border-0 shadow-sm py-2">
-                <h6 class="small mb-1">Delivered</h6>
+            <div class="card stat-card text-white border-0 shadow-sm py-2" style="background: linear-gradient(135deg, #2DB5E8 0%, #1a9fd6 100%);">
+                <h6 class="small mb-1 opacity-75">पोहोचवले</h6>
                 <h3 class="fw-bold mb-0" id="statDelivered">0</h3>
             </div>
         </div>
         <div class="col-4">
-            <div class="card bg-secondary text-white border-0 shadow-sm py-2">
-                <h6 class="small mb-1">Remaining </h6>
+            <div class="card stat-card text-white border-0 shadow-sm py-2" style="background: linear-gradient(135deg, #F9A826 0%, #e09214 100%);">
+                <h6 class="small mb-1 opacity-75">शिल्लक</h6>
                 <h3 class="fw-bold mb-0" id="statRemaining">0</h3>
             </div>
         </div>
@@ -76,10 +97,13 @@ $deliveries = [];
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-4" id="viewTabs" role="tablist">
         <li class="nav-item">
-            <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button" onclick="resetOverview()">List View</button>
+            <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button" onclick="resetOverview()">यादी</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapView" type="button" onclick="showOverviewMap()">Map View</button>
+            <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapView" type="button" onclick="showOverviewMap()">नकाशा</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="van-tab" data-bs-toggle="tab" data-bs-target="#vanView" type="button" onclick="loadVanData()">व्हॅन तपशील</button>
         </li>
     </ul>
 
@@ -91,16 +115,16 @@ $deliveries = [];
             
 
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Today's Dispatch List (<span id="countDisplay"><?php echo count($deliveries); ?></span>)</h5>
-                <small class="text-muted" id="locStatus">Getting location...</small>
+                <h5 class="mb-0">आजची डिलिव्हरी यादी (<span id="countDisplay"><?php echo count($deliveries); ?></span>)</h5>
+                <small class="text-muted" id="locStatus">स्थान मिळवत आहे...</small>
             </div>
 
             <div class="row g-3" id="deliveryList">
                 <div class="col-12 text-center py-5">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">लोड होत आहे...</span>
                     </div>
-                    <p class="text-muted mt-2">Loading Assigned Deliveries...</p>
+                    <p class="text-muted mt-2">नेमून दिलेली डिलिव्हरी लोड होत आहे...</p>
                 </div>
             </div>
         </div>
@@ -113,7 +137,39 @@ $deliveries = [];
                 </div>
             </div>
             <div class="alert alert-info mt-3 small" id="mapInfo">
-                <i class="fa-solid fa-info-circle me-1"></i> The blue route shows the optimized delivery sequence starting from your current location.
+                <i class="fa-solid fa-info-circle me-1"></i> निळा मार्ग तुमच्या सध्याच्या ठिकाणापासून सुरू होणारा सर्वोत्तम डिलिव्हरी मार्ग दर्शवतो.
+            </div>
+        </div>
+
+        <!-- Van Details View -->
+        <div class="tab-pane fade" id="vanView">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-primary btn-sm shadow-sm" onclick="openAddVanModal()">
+                    <i class="fa-solid fa-plus me-1"></i> नवीन व्हॅन पाठवा
+                </button>
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">व्हॅन आयडी</th>
+                                    <th>जोडीदार</th>
+                                    <th>एकूण</th>
+                                    <th>पोहोचवले</th>
+                                    <th>शिल्लक</th>
+                                    <th>बाहेर पडण्याची वेळ</th>
+                                    <th>परतण्याची वेळ</th>
+                                    <th>कृती</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vanTableBody">
+                                <tr><td colspan="6" class="text-center py-4 text-muted">लोड होत आहे...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -125,12 +181,12 @@ $deliveries = [];
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Scan Customer QR</h5>
+                <h5 class="modal-title">ग्राहक QR स्कॅन करा</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopScan()"></button>
             </div>
             <div class="modal-body text-center">
                 <div id="reader" style="width: 100%;"></div>
-                <p class="text-muted mt-2">Point camera at customer's QR Code</p>
+                <p class="text-muted mt-2">कॅमेरा ग्राहकाच्या QR कोडकडे धरा</p>
                 <form id="completeForm" action="complete_delivery.php" method="POST">
                     <input type="hidden" name="assignment_id" id="assignment_id">
                 </form>
@@ -144,16 +200,44 @@ $deliveries = [];
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="navTargetName">Navigation</h5>
+                <h5 class="modal-title fw-bold" id="navTargetName">मार्गदर्शन (Navigation)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopNavigation()"></button>
             </div>
             <div class="modal-body p-0 position-relative">
                 <div id="navMap" style="height: 100%; width: 100%;"></div>
                 <div class="position-absolute bottom-0 start-0 p-3 w-100" style="z-index: 1000;">
                     <button class="btn btn-danger w-100 shadow fw-bold" data-bs-dismiss="modal" onclick="stopNavigation()">
-                        Exit Navigation
+                        नेव्हिगेशन बंद करा
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Van Modal -->
+<div class="modal fade" id="addVanModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">नवीन व्हॅन पाठवा</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="vanForm">
+                    <input type="hidden" name="boy_id" value="<?php echo $boy_id; ?>">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">व्हॅन क्रमांक / आयडी</label>
+                        <input type="text" class="form-control" name="van_id" required placeholder="उदा. VAN-01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">प्रमाण (कॅन)</label>
+                        <input type="number" class="form-control" name="quantity" required min="1" value="50">
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 shadow-sm fw-bold" onclick="submitVanDispatch()">
+                        पाठवल्याची पुष्टी करा
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -199,6 +283,9 @@ $deliveries = [];
         setInterval(() => {
             if(!html5QrcodeScanner) { 
                 fetchDeliveries();
+                if(document.getElementById('vanView').classList.contains('active')) {
+                    loadVanData(true);
+                }
             }
         }, 30000);
     });
@@ -284,19 +371,21 @@ $deliveries = [];
         .then(r => r.json())
         .then(res => {
             if(res.success) {
-                const currentDataStr = JSON.stringify(res.data);
-                if(lastDeliveryData === currentDataStr) return; // No Change
-                
-                lastDeliveryData = currentDataStr;
-                renderDeliveries(res.data);
-                
-                // Update Stats
+                // Update Stats ALWAYS if they exist (or include in comparison)
                 if(res.stats) {
                     document.getElementById('statTotal').innerText = res.stats.total_cans;
                     document.getElementById('statDelivered').innerText = res.stats.delivered_cans;
                     document.getElementById('statRemaining').innerText = res.stats.remaining_cans;
                 }
 
+                // State Comparison (Include stats to detect van count changes)
+                const currentDataStr = JSON.stringify({ data: res.data, stats: res.stats });
+                
+                if(lastDeliveryData === currentDataStr) return; // Full state match
+                lastDeliveryData = currentDataStr;
+
+                renderDeliveries(res.data);
+                
                 // Update counter
                 document.getElementById('countDisplay').innerText = res.data.length;
             } else {
@@ -353,18 +442,15 @@ $deliveries = [];
         sortedOrders = displayItems;
 
         if(displayItems.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center text-muted mt-5"><p>No order assigned.</p></div>';
+            container.innerHTML = '<div class="col-12 text-center text-muted mt-5"><p>कोणतीही ऑर्डर नेमून दिली नाही.</p></div>';
             return;
         }
 
         displayItems.forEach((item, index) => {
-             // Calculate distance purely for informational display if desired, 
-             // but user requested removing 'nearest' condition, implies logic change.
-             // We can keep the badge as "X km away" but not sort by it.
              let distStr = "";
              if (currentLat && currentLng) {
                  const d = getDistance(currentLat, currentLng, parseFloat(item.latitude), parseFloat(item.longitude));
-                 distStr = `<span class="badge bg-secondary ms-2">${d.toFixed(1)} km</span>`;
+                 distStr = `<span class="badge bg-secondary ms-2">${d.toFixed(1)} किमी दूर</span>`;
              }
 
             const html = `
@@ -385,15 +471,15 @@ $deliveries = [];
                             <div class="d-grid gap-2">
                                 <button class="btn btn-sm btn-outline-primary" 
                                         onclick="startNavigation(${item.latitude}, ${item.longitude}, '${item.full_name.replace(/'/g, "\\'")}')">
-                                   <i class="fa-solid fa-diamond-turn-right me-1"></i> Navigate
+                                   <i class="fa-solid fa-diamond-turn-right me-1"></i> मार्ग दाखवा (Navigate)
                                 </button>
                                 <button class="btn btn-success btn-sm" 
                                         onclick="startScan('${item.qr_code}', ${item.assignment_id})">
-                                    <i class="fa-solid fa-qrcode me-1"></i> Scan & Deliver
+                                    <i class="fa-solid fa-qrcode me-1"></i> स्कॅन आणि डिलिव्हर
                                 </button>
                                 <button class="btn btn-primary btn-sm" 
                                         onclick="completeDelivery(${item.assignment_id})">
-                                    <i class="fa-solid fa-check me-1"></i> Delivered
+                                    <i class="fa-solid fa-check me-1"></i> पोहोचवले (Delivered)
                                 </button>
                             </div>
                         </div>
@@ -517,12 +603,12 @@ $deliveries = [];
              document.getElementById('assignment_id').value = currentAssignmentId;
              document.getElementById('completeForm').submit();
         } else {
-            alert("Incorrect QR Code! Please scan the correct customer's code.");
+            alert("चुकीचा QR कोड! कृपया योग्य ग्राहकाचा कोड स्कॅन करा.");
         }
     }
 
     function completeDelivery(assignmentId) {
-        if(confirm('Are you sure you want to mark this order as DELIVERED?')) {
+        if(confirm('तुम्हाला खात्री आहे की तुम्ही ही ऑर्डर पोहोचवली (DELIVERED) म्हणून चिन्हांकित करू इच्छिता?')) {
             document.getElementById('assignment_id').value = assignmentId;
             document.getElementById('completeForm').submit();
         }
@@ -538,13 +624,13 @@ $deliveries = [];
     // --- NAVIGATION LOGIC ---
     function startNavigation(targetLat, targetLng, targetName) {
         if (!currentLat || !currentLng) {
-            alert("Waiting for your current location. Please ensure GPS is active.");
+            alert("तुमचे सध्याचे स्थान मिळण्याची प्रतीक्षा करत आहे. कृपया GPS सुरू असल्याची खात्री करा.");
             return;
         }
 
         navTargetLat = targetLat;
         navTargetLng = targetLng;
-        document.getElementById('navTargetName').innerText = "Navigating to: " + targetName;
+        document.getElementById('navTargetName').innerText = "येथे जात आहे: " + targetName;
         
         isNavigating = true;
         const modal = new bootstrap.Modal(document.getElementById('navModal'));
@@ -631,6 +717,130 @@ $deliveries = [];
             navMap.removeLayer(navTargetMarker);
             navTargetMarker = null;
         }
+    }
+
+    // --- VAN MANAGEMENT LOGIC ---
+    let lastVanData = null;
+    function loadVanData(isPoll = false) {
+        const tbody = document.getElementById('vanTableBody');
+        if(!isPoll) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
+            lastVanData = null; // Force re-render on manual load
+        }
+
+        fetch('../admin/api/van_management.php?action=fetch_logs')
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                // Filter for current delivery boy ONLY
+                const myLogs = res.data.filter(log => log.delivery_boy_id == "<?php echo $boy_id; ?>");
+                
+                const currentDataStr = JSON.stringify(myLogs);
+                if (isPoll && lastVanData === currentDataStr) return;
+                lastVanData = currentDataStr;
+                
+                if(isPoll) fetchDeliveries(); // Keep stats in sync
+
+                if(myLogs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No records found.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                myLogs.forEach(van => {
+                    const outTime = van.out_time ? new Date(van.out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-';
+                    const inTime = van.in_time ? new Date(van.in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-';
+                    const delivered = parseInt(van.delivered_count) || 0;
+                    const total = parseInt(van.quantity) || 0;
+                    const remaining = total - delivered;
+
+                    let actionBtn = '';
+                    if (van.status === 'Pending') {
+                        actionBtn = `<button class="btn btn-xs btn-primary py-0 px-2" style="font-size: 11px;" onclick="markVanOut(${van.id})">Out</button>`;
+                    } else if (van.status === 'Out') {
+                        actionBtn = `<button class="btn btn-xs btn-warning py-0 px-2" style="font-size: 11px;" onclick="markVanIn(${van.id})">In</button>`;
+                    } else {
+                        actionBtn = `<span class="badge bg-success">Done</span>`;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td class="ps-3 fw-bold">${van.van_id}</td>
+                            <td><small>${van.boy_name || 'Me'}</small></td>
+                            <td>${total}</td>
+                            <td><span class="text-success fw-bold">${delivered}</span></td>
+                            <td><span class="text-danger fw-bold">${remaining}</span></td>
+                            <td><small>${outTime}</small></td>
+                            <td><small>${inTime}</small></td>
+                            <td>${actionBtn}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            }
+        });
+    }
+
+    function markVanOut(id) {
+        if(confirm('या व्हॅनसाठी डिलिव्हरी सुरू करायची का? स्थिती OUT मध्ये बदलली जाईल.')) {
+            const fd = new FormData();
+            fd.append('id', id);
+            fetch('../admin/api/van_management.php?action=mark_out', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    lastVanData = null; 
+                    loadVanData();
+                    fetchDeliveries(); // Refresh stats
+                }
+            });
+        }
+    }
+
+    function markVanIn(id) {
+        if(confirm('या व्हॅनची डिलिव्हरी पूर्ण झाली का? स्थिती IN मध्ये बदलली जाईल.')) {
+            const fd = new FormData();
+            fd.append('id', id);
+            fetch('../admin/api/van_management.php?action=mark_in', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    lastVanData = null; 
+                    loadVanData();
+                    fetchDeliveries(); // Refresh stats
+                }
+            });
+        }
+    }
+
+    // --- FORM SUBMISSION ---
+    function openAddVanModal() {
+        new bootstrap.Modal(document.getElementById('addVanModal')).show();
+    }
+
+    function submitVanDispatch() {
+        const form = document.getElementById('vanForm');
+        const fd = new FormData(form);
+        
+        // Use the same API as Admin
+        fetch('../admin/api/van_management.php?action=add_van', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addVanModal')).hide();
+                form.reset();
+                lastVanData = null; 
+                loadVanData();
+                fetchDeliveries(); // Refresh top stats
+                alert("व्हॅन यशस्वीरित्या पाठवली!");
+            } else {
+                alert(res.message || "व्हॅन जोडताना त्रुटी आली");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("सिस्टम त्रुटी: व्हॅन पाठवता आली नाही.");
+        });
     }
 </script>
 </body>

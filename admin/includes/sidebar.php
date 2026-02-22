@@ -72,10 +72,16 @@ $role = $_SESSION['role'] ?? 'Admin';
         </li>
 
         <li class="sidebar-item">
+            <a href="testimonials.php" class="sidebar-link <?php echo $current_page == 'testimonials.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-comment-dots"></i> Testimonials
+            </a>
+        </li>
+
+        <!-- <li class="sidebar-item">
             <a href="fleet_map.php" class="sidebar-link <?php echo $current_page == 'fleet_map.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-map-location-dot"></i> Fleet Tracking
             </a>
-        </li>
+        </li> -->
 
         <li class="sidebar-header small text-uppercase text-muted fw-bold px-3 mt-3 mb-1" style="color: white!important;">Analytics & Finance</li>
 

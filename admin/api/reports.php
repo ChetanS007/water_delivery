@@ -49,13 +49,28 @@ function getConsumptionData($pdo, $start, $end) {
 }
 
 function getBillingData($pdo, $start, $end) {
-    // 1. Bar Chart: Billed vs Collected
-    // Billed = All orders, Collected = Delivered orders
-    $billed = $pdo->prepare("SELECT DATE(created_at) as date, SUM(total_amount) as amount FROM orders WHERE created_at BETWEEN ? AND ? GROUP BY date ORDER BY date");
-    $billed->execute(["$start 00:00:00", "$end 23:59:59"]);
+    // 1. Bar Chart: Billed vs Collected (Month-wise)
+    // Billed = Actual Delivered Value (Value of service provided)
+    $billed = $pdo->prepare("
+        SELECT DATE_FORMAT(dd.delivery_date, '%Y-%m') as date, SUM(oi.quantity * p.price) as amount 
+        FROM daily_deliveries dd
+        JOIN order_items oi ON dd.subscription_id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        WHERE dd.status = 'Delivered' AND dd.delivery_date BETWEEN ? AND ? 
+        GROUP BY date 
+        ORDER BY date
+    ");
+    $billed->execute([$start, $end]);
     $billedData = $billed->fetchAll(PDO::FETCH_ASSOC);
 
-    $collected = $pdo->prepare("SELECT DATE(created_at) as date, SUM(total_amount) as amount FROM orders WHERE status = 'Delivered' AND created_at BETWEEN ? AND ? GROUP BY date ORDER BY date");
+    // Collected = Actual Approved Payments from customers
+    $collected = $pdo->prepare("
+        SELECT DATE_FORMAT(created_at, '%Y-%m') as date, SUM(amount) as amount 
+        FROM customer_payments 
+        WHERE status = 'Approved' AND created_at BETWEEN ? AND ? 
+        GROUP BY date 
+        ORDER BY date
+    ");
     $collected->execute(["$start 00:00:00", "$end 23:59:59"]);
     $collectedData = $collected->fetchAll(PDO::FETCH_ASSOC);
 

@@ -7,11 +7,11 @@ $stmt->execute();
 $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/themes/uaques/assets/images/logo.png';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudha Jal - Premium Water Delivery</title>
+    <title>सुधा जल - प्रीमियम पाणी डिलिव्हरी</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -47,20 +47,20 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
             <div class="collapse navbar-collapse" id="navbarContent">
                 <!-- Menu Right -->
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center gap-2">
-                    <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#features">About</a></li> 
-                    <li class="nav-item"><a class="nav-link" href="#products">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="index.php">मुख्यपृष्ठ</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#features">माहिती</a></li> 
+                    <li class="nav-item"><a class="nav-link" href="#products">खरेदी</a></li>
                     
                     <!-- Conditional Contact / QR Code -->
                     <?php if(isset($_SESSION['qr_code'])): ?>
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-primary" href="#" data-bs-toggle="modal" data-bs-target="#qrCodeModal">
-                                <i class="fa-solid fa-qrcode me-1"></i> My QR Code
+                                <i class="fa-solid fa-qrcode me-1"></i> माझा क्यूआर कोड
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-success" href="my_bill.php">
-                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> My Bill
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> माझे बिल
                             </a>
                         </li>
                     <?php else: ?>
@@ -76,27 +76,18 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 animate slideIn" style="border-radius: 12px;">
-                                <li><a class="dropdown-item rounded py-2 small" href="profile.php"><i class="fa-solid fa-id-card me-2 text-muted"></i> My Profile</a></li>
-                                <li><a class="dropdown-item rounded py-2 small" href="my_orders.php"><i class="fa-solid fa-box-open me-2 text-muted"></i> My Orders</a></li>
+                                <li><a class="dropdown-item rounded py-2 small" href="profile.php"><i class="fa-solid fa-id-card me-2 text-muted"></i> माझे प्रोफाइल</a></li>
+                                <li><a class="dropdown-item rounded py-2 small" href="my_orders.php"><i class="fa-solid fa-box-open me-2 text-muted"></i> माझ्या ऑर्डर्स</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item rounded py-2 small text-danger" href="logout.php"><i class="fa-solid fa-power-off me-2"></i> Logout</a></li>
+                                <li><a class="dropdown-item rounded py-2 small text-danger" href="logout.php"><i class="fa-solid fa-power-off me-2"></i> बाहेर पडा</a></li>
                             </ul>
                         </li>
                     <?php else: ?>
                         <li class="nav-item ms-lg-3 d-flex gap-2">
-                            <button class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
-                            <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#registerModal">Register</button>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#loginModal">लॉगिन</button>
+                            <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#registerModal">नोंदणी</button>
                         </li>
                     <?php endif; ?>
-                    
-                    <!-- <li class="nav-item ms-1">
-                        <a href="cart.php" class="position-relative btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px;">
-                            <i class="fa-solid fa-cart-shopping text-primary small"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle">
-                                <span class="visually-hidden">New alerts</span>
-                            </span>
-                        </a>
-                    </li> -->
                 </ul>
             </div>
         </div>
@@ -112,11 +103,11 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <h5 class="fw-bold mb-3 font-heading text-primary">Your Delivery Code</h5>
+                    <h5 class="fw-bold mb-3 font-heading text-primary">तुमचा डिलिव्हरी कोड</h5>
                     <div class="d-flex justify-content-center my-3">
                         <div id="navbar_qrcode" class="bg-white p-3 rounded shadow-sm border"></div>
                     </div>
-                    <p class="small text-muted mb-0">Show this QR code to the delivery partner upon arrival.</p>
+                    <p class="small text-muted mb-0">डिलिव्हरी पार्टनर आल्यावर त्याला हा क्यूआर कोड दाखवा.</p>
                 </div>
             </div>
         </div>

@@ -38,19 +38,14 @@ if ($action === 'fetch_logs') {
         $stmt = $pdo->prepare("
             SELECT vl.*, db.full_name as boy_name,
             (
-                CASE 
-                    WHEN vl.out_time IS NULL THEN 0
-                    ELSE (
-                        SELECT COALESCE(SUM(oi.quantity), 0) 
-                        FROM daily_deliveries dd
-                        JOIN orders o ON dd.subscription_id = o.id
-                        JOIN order_items oi ON o.id = oi.order_id
-                        WHERE dd.delivery_boy_id = vl.delivery_boy_id 
-                        AND dd.status = 'Delivered' 
-                        AND dd.delivered_at >= vl.out_time 
-                        AND (vl.in_time IS NULL OR dd.delivered_at <= vl.in_time)
-                    )
-                END
+                SELECT COALESCE(SUM(oi.quantity), 0) 
+                FROM daily_deliveries dd
+                JOIN orders o ON dd.subscription_id = o.id
+                JOIN order_items oi ON o.id = oi.order_id
+                WHERE dd.delivery_boy_id = vl.delivery_boy_id 
+                AND dd.status = 'Delivered' 
+                AND dd.delivered_at >= vl.created_at
+                AND (vl.in_time IS NULL OR dd.delivered_at <= vl.in_time)
             ) as delivered_count
             FROM van_logs vl 
             LEFT JOIN delivery_boys db ON vl.delivery_boy_id = db.id 
