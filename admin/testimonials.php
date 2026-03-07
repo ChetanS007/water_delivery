@@ -181,8 +181,9 @@ function submitForm() {
         if(res.success) {
             bootstrap.Modal.getInstance(document.getElementById('testimonialModal')).hide();
             loadTestimonials();
+            Swal.fire({ icon: 'success', title: 'Success', text: 'Testimonial saved.', timer: 2000, showConfirmButton: false });
         } else {
-            alert(res.message);
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
         }
     });
 }
@@ -206,14 +207,31 @@ function editTestimonial(id) {
 }
 
 function deleteTestimonial(id) {
-    if(confirm('Are you sure you want to delete this testimonial?')) {
-        const fd = new FormData();
-        fd.append('action', 'delete');
-        fd.append('id', id);
-        fetch('api/testimonials.php', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(res => loadTestimonials());
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Delete this testimonial?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('action', 'delete');
+            fd.append('id', id);
+            fetch('api/testimonials.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    Swal.fire('Deleted!', 'Testimonial removed.', 'success');
+                    loadTestimonials();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 </script>
 

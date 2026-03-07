@@ -97,6 +97,7 @@ if ($action === 'fetch_details') {
             SELECT 
                 dd.delivery_date,
                 dd.status,
+                dd.can_received,
                 dd.delivered_at,
                 oi.quantity,
                 p.product_name,

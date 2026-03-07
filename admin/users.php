@@ -308,13 +308,18 @@ function searchLocation() {
         if(data.length > 0) {
             map.setView([data[0].lat, data[0].lon], 16);
             updateMarker(data[0].lat, data[0].lon);
-        } else alert('Location not found');
+        } else {
+            Swal.fire({ icon: 'info', title: 'Not Found', text: 'Location not found' });
+        }
     })
     .catch(error => console.error('Error searching location:', error));
 }
 
 function detectLocation(isAuto = false) {
-    if (!navigator.geolocation) { if(!isAuto) alert("Geolocation not supported"); return; }
+    if (!navigator.geolocation) { 
+        if(!isAuto) Swal.fire({ icon: 'error', title: 'Not Supported', text: 'Geolocation is not supported by your browser' }); 
+        return; 
+    }
     const btn = document.querySelector('button[title="Detect Current Location"]');
     const old = btn ? btn.innerHTML : '';
     if(btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
@@ -333,7 +338,7 @@ function detectLocation(isAuto = false) {
                 if (err.code === err.PERMISSION_DENIED) {
                     msg = "Location permission denied. Please enable it in browser settings.";
                 }
-                alert(msg);
+                Swal.fire({ icon: 'warning', title: 'Location Error', text: msg });
             }
             if(btn) { btn.innerHTML = old; btn.disabled = false; }
         },
@@ -430,8 +435,10 @@ function submitUserForm() {
         if(res.success) {
             bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
             loadUsers();
-            alert(res.message);
-        } else alert(res.message);
+            Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 2000, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+        }
     });
 }
 
@@ -473,13 +480,27 @@ function editUser(id) {
 }
 
 function deleteUser(id) {
-    if(confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
-        const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
-        fetch('api/users.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadUsers();
-            else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Delete this customer? This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+            fetch('api/users.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Deleted!', 'Customer has been removed.', 'success');
+                    loadUsers();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 
 function viewUser(id) {

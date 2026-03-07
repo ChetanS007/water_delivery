@@ -174,9 +174,9 @@ function submitForm() {
         if(res.success) {
             bootstrap.Modal.getInstance(document.getElementById('offerModal')).hide();
             loadOffers();
-            alert(res.message);
+            Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 2000, showConfirmButton: false });
         } else {
-            alert(res.message);
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
         }
     });
 }
@@ -200,12 +200,27 @@ function editOffer(id) {
 }
 
 function deleteOffer(id) {
-    if(confirm('Delete this offer code?')) {
-        const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
-        fetch('api/offers.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadOffers(); else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Delete this offer code?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+            fetch('api/offers.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Deleted!', 'Offer code has been removed.', 'success');
+                    loadOffers();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 </script>
 

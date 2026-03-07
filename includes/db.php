@@ -1,7 +1,7 @@
 <?php
 $host = 'localhost';
 $user = 'root';
-$pass = ''; // Default XAMPP password
+$pass = 'Chetan@123#'; // Default XAMPP password
 $db   = 'water_delivery';
 
 // $host = 'localhost';

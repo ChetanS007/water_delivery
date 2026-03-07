@@ -6,79 +6,51 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Admin', 'Superadmin'])) {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit();
+    }
     header("Location: login.php");
     exit();
 }
 
-$message = '';
-$messageType = '';
+// Handle AJAX Post Requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    header('Content-Type: application/json');
+    
+    $setting_key = $_POST['setting_key'] ?? '';
+    
+    if ($setting_key && isset($_FILES[$setting_key])) {
+        $targetDir = "../uploads/settings/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
 
-// Handle Logo Upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['logo'])) {
-    $targetDir = "../uploads/settings/";
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0777, true);
-    }
+        $fileName = $setting_key . "_" . time() . "_" . basename($_FILES[$setting_key]["name"]);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
 
-    $fileName = "logo_" . time() . "_" . basename($_FILES["logo"]["name"]);
-    $targetFilePath = $targetDir . $fileName;
-    $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
-
-    $allowTypes = array('jpg', 'png', 'jpeg', 'gif', 'svg', 'webp');
-    if (in_array(strtolower($fileType), $allowTypes)) {
-        if (move_uploaded_file($_FILES["logo"]["tmp_name"], $targetFilePath)) {
-            $dbPath = "uploads/settings/" . $fileName;
-            
-            $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'logo'");
-            if ($stmt->execute([$dbPath])) {
-                $message = "Logo uploaded and updated successfully.";
-                $messageType = "success";
+        $allowTypes = array('jpg', 'png', 'jpeg', 'gif', 'svg', 'webp');
+        if (in_array(strtolower($fileType), $allowTypes)) {
+            if (move_uploaded_file($_FILES[$setting_key]["tmp_name"], $targetFilePath)) {
+                $dbPath = "uploads/settings/" . $fileName;
+                
+                $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?");
+                if ($stmt->execute([$dbPath, $setting_key])) {
+                    echo json_encode(['success' => true, 'message' => ucfirst(str_replace('_', ' ', $setting_key)) . ' updated successfully!', 'path' => $dbPath]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to update database.']);
+                }
             } else {
-                $message = "Failed to update logo in database.";
-                $messageType = "danger";
+                echo json_encode(['success' => false, 'message' => 'Error uploading file.']);
             }
         } else {
-            $message = "Sorry, there was an error uploading your file.";
-            $messageType = "danger";
+            echo json_encode(['success' => false, 'message' => 'Invalid file type. Allowed: JPG, PNG, WEBP, SVG.']);
         }
     } else {
-        $message = "Sorry, only JPG, JPEG, PNG, GIF, SVG & WEBP files are allowed.";
-        $messageType = "danger";
+        echo json_encode(['success' => false, 'message' => 'Missing data.']);
     }
-}
-
-// Handle Payment QR Upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['payment_qr'])) {
-    $targetDir = "../uploads/settings/";
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0777, true);
-    }
-
-    $fileName = "payment_qr_" . time() . "_" . basename($_FILES["payment_qr"]["name"]);
-    $targetFilePath = $targetDir . $fileName;
-    $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
-
-    $allowTypes = array('jpg', 'png', 'jpeg', 'gif', 'svg', 'webp');
-    if (in_array(strtolower($fileType), $allowTypes)) {
-        if (move_uploaded_file($_FILES["payment_qr"]["tmp_name"], $targetFilePath)) {
-            $dbPath = "uploads/settings/" . $fileName;
-            
-            $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'payment_qr'");
-            if ($stmt->execute([$dbPath])) {
-                $message = "Payment QR code updated successfully.";
-                $messageType = "success";
-            } else {
-                $message = "Failed to update payment QR in database.";
-                $messageType = "danger";
-            }
-        } else {
-            $message = "Sorry, there was an error uploading your file.";
-            $messageType = "danger";
-        }
-    } else {
-        $message = "Sorry, only JPG, JPEG, PNG, GIF, SVG & WEBP files are allowed.";
-        $messageType = "danger";
-    }
+    exit();
 }
 
 // Fetch current setting
@@ -96,13 +68,6 @@ include 'includes/header.php';
         <h3 class="fw-bold text-dark">System Settings</h3>
     </div>
 
-    <?php if ($message): ?>
-        <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
-            <?php echo $message; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
     <div class="row g-4">
         <!-- Logo Config -->
         <div class="col-md-6">
@@ -113,11 +78,11 @@ include 'includes/header.php';
                     <div class="mb-4">
                         <label class="form-label text-muted small">Current Logo Preview</label>
                         <div class="bg-light p-4 rounded text-center border">
-                            <img src="../<?php echo htmlspecialchars($currentLogo); ?>" alt="Current Logo" style="max-height: 80px; width: auto;">
+                            <img id="logoPreview" src="../<?php echo htmlspecialchars($currentLogo); ?>" alt="Current Logo" style="max-height: 80px; width: auto;">
                         </div>
                     </div>
 
-                    <form action="settings.php" method="POST" enctype="multipart/form-data">
+                    <form id="logoForm" onsubmit="updateSetting(event, 'logo')">
                         <div class="mb-3">
                             <label for="logo" class="form-label fw-600">Upload New Logo</label>
                             <input class="form-control" type="file" id="logo" name="logo" required>
@@ -139,16 +104,16 @@ include 'includes/header.php';
                     
                     <div class="mb-4">
                         <label class="form-label text-muted small">Current QR Code</label>
-                        <div class="bg-light p-4 rounded text-center border">
+                        <div class="bg-light p-4 rounded text-center border" id="qrContainer">
                             <?php if ($currentPaymentQR): ?>
-                                <img src="../<?php echo htmlspecialchars($currentPaymentQR); ?>" alt="Payment QR" style="max-height: 150px; width: auto;">
+                                <img id="qrPreview" src="../<?php echo htmlspecialchars($currentPaymentQR); ?>" alt="Payment QR" style="max-height: 150px; width: auto;">
                             <?php else: ?>
-                                <div class="text-muted small py-4">No QR code uploaded yet.</div>
+                                <div class="text-muted small py-4" id="noQrMsg">No QR code uploaded yet.</div>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <form action="settings.php" method="POST" enctype="multipart/form-data">
+                    <form id="qrForm" onsubmit="updateSetting(event, 'payment_qr')">
                         <div class="mb-3">
                             <label for="payment_qr" class="form-label fw-600">Upload Payment QR Code</label>
                             <input class="form-control" type="file" id="payment_qr" name="payment_qr" required>
@@ -163,5 +128,53 @@ include 'includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+function updateSetting(e, key) {
+    e.preventDefault();
+    const form = e.target;
+    const fd = new FormData(form);
+    fd.append('setting_key', key);
+
+    Swal.fire({
+        title: 'Updating...',
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    fetch('settings.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            Swal.fire({ icon: 'success', title: 'Updated!', text: res.message, timer: 2000, showConfirmButton: false });
+            // Update preview dynamically
+            if (key === 'logo') {
+                document.getElementById('logoPreview').src = '../' + res.path;
+            } else if (key === 'payment_qr') {
+                let img = document.getElementById('qrPreview');
+                if (!img) {
+                    const msg = document.getElementById('noQrMsg');
+                    if(msg) msg.remove();
+                    img = document.createElement('img');
+                    img.id = 'qrPreview';
+                    img.style.maxHeight = '150px';
+                    img.style.width = 'auto';
+                    document.getElementById('qrContainer').appendChild(img);
+                }
+                img.src = '../' + res.path;
+            }
+            form.reset();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+        }
+    })
+    .catch(err => {
+        Swal.fire({ icon: 'error', title: 'Server Error', text: 'Something went wrong.' });
+    });
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>

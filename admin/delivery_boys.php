@@ -153,9 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(res.success) {
                 bootstrap.Modal.getInstance(document.getElementById('boyModal')).hide();
                 loadBoys();
-                alert(res.message);
+                Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 2000, showConfirmButton: false });
             } else {
-                alert(res.message);
+                Swal.fire({ icon: 'error', title: 'Error', text: res.message });
             }
         });
     });
@@ -268,12 +268,27 @@ function viewBoy(id) {
 }
 
 function deleteBoy(id) {
-    if(confirm('Are you sure you want to remove this delivery partner?')) {
-        const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
-        fetch('api/delivery_boys.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadBoys(); else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Remove this delivery partner?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, remove!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+            fetch('api/delivery_boys.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Removed!', 'Delivery partner has been removed.', 'success');
+                    loadBoys();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 </script>
 <?php include 'includes/footer.php'; ?>

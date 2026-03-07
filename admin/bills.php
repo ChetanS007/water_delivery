@@ -67,9 +67,17 @@
 </div>
 
 <script>
+let lastBillData = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadCustomers();
     loadBills();
+    // Poll every 15 seconds
+    setInterval(() => {
+        const modal = document.getElementById('billDetailsModal');
+        if (!modal.classList.contains('show')) {
+            loadBills(true);
+        }
+    }, 15000);
 });
 
 function loadCustomers() {
@@ -85,16 +93,25 @@ function loadCustomers() {
     });
 }
 
-function loadBills() {
+function loadBills(isPoll = false) {
     const tbody = document.getElementById('billTableBody');
     const customerId = document.getElementById('customerFilter').value;
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
+    if (!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastBillData = null;
+    }
+
     fetch(`api/bills.php?action=fetch_bills&customer_id=${customerId}&start_date=${startDate}&end_date=${endDate}`)
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastBillData === currentDataStr) return;
+            lastBillData = currentDataStr;
+
             if(res.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No Record Found</td></tr>';
                 return;
@@ -162,9 +179,10 @@ function viewBillDetails(id) {
                             <tr>
                                 <th>Date</th>
                                 <th>Product</th>
-                                <th>Quantity</th>
+                                <th class="text-center">Qty</th>
                                 <th>Unit Price</th>
                                 <th>Cost</th>
+                                <th class="text-center">Can Received</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -173,9 +191,14 @@ function viewBillDetails(id) {
             let total = 0;
             res.data.forEach(item => {
                 const date = new Date(item.delivery_date).toLocaleDateString();
-                const cost = parseFloat(item.cost); // Ensure number
-                const price = parseFloat(item.price);
+                const cost = parseFloat(item.cost);
                 total += cost;
+                const price = parseFloat(item.price);
+                const canReceived = parseInt(item.can_received) === 1;
+                
+                const receivedIcon = canReceived 
+                    ? '<i class="fa-solid fa-circle-check text-success fs-5"></i>' 
+                    : '<i class="fa-solid fa-circle-xmark text-danger fs-5"></i>';
                 
                 html += `
                     <tr>
@@ -184,6 +207,7 @@ function viewBillDetails(id) {
                         <td class="text-center">${item.quantity}</td>
                         <td>₹${price.toFixed(2)}</td>
                         <td class="fw-bold">₹${cost.toFixed(2)}</td>
+                        <td class="text-center">${receivedIcon}</td>
                     </tr>
                 `;
             });
@@ -208,7 +232,11 @@ function viewBillDetails(id) {
 }
 
 function exportBills() {
-    alert('Export feature coming soon!');
+    Swal.fire({
+        icon: 'info',
+        title: 'Coming Soon',
+        text: 'Export feature coming soon!'
+    });
 }
 </script>
 

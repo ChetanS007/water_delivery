@@ -174,23 +174,48 @@ function getStatusColor(status) {
 }
 
 function approve(id) {
-    if(confirm('Accept this subscription request?')) {
-        const fd = new FormData(); fd.append('action', 'approve'); fd.append('id', id);
-        fetch('api/subscriptions.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadSubscriptions();
-            else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Accept Subscription?',
+        text: "Are you sure you want to accept this request?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, accept'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'approve'); fd.append('id', id);
+            fetch('api/subscriptions.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Accepted!', res.message, 'success');
+                    loadSubscriptions();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 
 function reject(id) {
-    if(confirm('Reject this request?')) {
-        const fd = new FormData(); fd.append('action', 'reject'); fd.append('id', id);
-        fetch('api/subscriptions.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadSubscriptions();
-            else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Reject Request?',
+        text: "Are you sure you want to reject this request?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, reject'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'reject'); fd.append('id', id);
+            fetch('api/subscriptions.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Rejected!', res.message, 'success');
+                    loadSubscriptions();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 
 let allDeliveryBoys = [];
@@ -269,9 +294,9 @@ function submitAssignment() {
         if(res.success) {
             bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide();
             loadSubscriptions();
-            alert(res.message);
+            Swal.fire({ icon: 'success', title: 'Assigned!', text: res.message, timer: 2000, showConfirmButton: false });
         } else {
-            alert(res.message);
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
         }
     });
 }

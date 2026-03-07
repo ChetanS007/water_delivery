@@ -229,7 +229,7 @@ $can_increase = "1.2%";
         </div>
 
         <!-- Card 5: Total Received -->
-        <div class="col-xl-2 col-md-4">
+        <div class="col-xl-4 col-md-6">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Received Bill</div>
@@ -240,7 +240,7 @@ $can_increase = "1.2%";
         </div>
 
         <!-- Card 6: Pending Bill -->
-        <div class="col-xl-2 col-md-4">
+        <div class="col-xl-4 col-md-6">
             <div class="dashboard-card d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-title">Pending Bill</div>
@@ -248,6 +248,12 @@ $can_increase = "1.2%";
                 </div>
                 <div id="sparkPending" style="min-width: 50px;"></div>
             </div>
+        </div>
+        
+        <!-- Card 7: Delivered vs Cancelled (Hidden but for stats) -->
+        <div class="d-none">
+            <span id="statDelivered"><?php echo $delivered_count; ?></span>
+            <span id="statCancelled"><?php echo $cancelled_count; ?></span>
         </div>
     </div>
 
@@ -472,8 +478,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Set polling interval (e.g., 30 seconds)
-    setInterval(refreshDashboard, 30000);
+    // Set polling interval (e.g., 10 seconds for real-time feel)
+    setInterval(refreshDashboard, 10000);
 });
 </script>
 

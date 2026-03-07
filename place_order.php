@@ -42,7 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $check_stmt = $pdo->prepare("SELECT id FROM orders WHERE user_id = ? AND status IN ('Pending', 'Approved', 'Assigned')");
     $check_stmt->execute([$user_id]);
     if ($check_stmt->rowCount() > 0) {
-        echo "<script>alert('तुमची आधीच एक विनंती प्रलंबित आहे. कृपया ती पूर्ण होईपर्यंत प्रतीक्षा करा.'); window.location.href='profile.php';</script>";
+        echo "
+        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+        <script>
+            Swal.fire({
+                icon: 'info',
+                title: 'प्रलंबित विनंती',
+                text: 'तुमची आधीच एक विनंती प्रलंबित आहे. कृपया ती पूर्ण होईपर्यंत प्रतीक्षा करा.',
+                confirmButtonText: 'ठीक आहे'
+            }).then(() => { window.location.href='profile.php'; });
+        </script>";
         exit();
     }
 
@@ -61,11 +70,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$order_id, $product_id, $quantity, $price]);
 
         $pdo->commit();
-        echo "<script>alert('सबस्क्रिप्शन विनंती यशस्वीरित्या पाठवली! ॲडमिनच्या मंजुरीची प्रतीक्षा आहे.'); window.location.href='profile.php';</script>";
+        echo "
+        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'यशस्वी!',
+                text: 'सबस्क्रिप्शन विनंती यशस्वीरित्या पाठवली! ॲडमिनच्या मंजुरीची प्रतीक्षा आहे.',
+                confirmButtonText: 'उत्तम'
+            }).then(() => { window.location.href='profile.php'; });
+        </script>";
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        echo "<script>alert('विनंती पाठवण्यात त्रुटी आली: " . $e->getMessage() . "'); window.location.href='index.php';</script>";
+        echo "
+        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'त्रुटी!',
+                text: 'विनंती पाठवण्यात त्रुटी आली: " . addslashes($e->getMessage()) . "',
+                confirmButtonText: 'ठीक आहे'
+            }).then(() => { window.location.href='index.php'; });
+        </script>";
     }
 }
 ?>

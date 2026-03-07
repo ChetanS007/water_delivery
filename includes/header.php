@@ -21,6 +21,8 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="assets/css/styles_composition.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 

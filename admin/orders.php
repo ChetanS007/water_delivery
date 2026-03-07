@@ -327,46 +327,65 @@ function submitVanDispatch() {
             lastVanData = null; 
             loadVanData();
             document.getElementById('vanForm').reset();
+            Swal.fire({ icon: 'success', title: 'Dispatched!', text: 'Van has been dispatched.', timer: 2000, showConfirmButton: false });
         } else {
-            alert(res.message || 'Error adding van');
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Error adding van' });
         }
     })
     .catch(err => {
         console.error(err);
-        alert("System Error: Could not add van.");
+        Swal.fire({ icon: 'error', title: 'System Error', text: 'Could not add van.' });
     });
 }
 
 function markVanOut(id) {
-    if(confirm('Mark van as Dispatched (Out)?')) {
-        const fd = new FormData();
-        fd.append('action', 'mark_out');
-        fd.append('id', id);
-        fetch('api/van_management.php?action=mark_out', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(res => {
-            if(res.success) {
-                lastVanData = null; 
-                loadVanData();
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Dispatch Van?',
+        text: "Mark van as Dispatched (Out)?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Out'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('action', 'mark_out');
+            fd.append('id', id);
+            fetch('api/van_management.php?action=mark_out', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    lastVanData = null; 
+                    loadVanData();
+                    Swal.fire('Dispatched!', 'Van status updated to OUT.', 'success');
+                }
+            });
+        }
+    });
 }
 
 function markVanIn(id) {
-    if(confirm('Mark van as Returned (In)?')) {
-        const fd = new FormData();
-        fd.append('action', 'mark_in');
-        fd.append('id', id);
-        fetch('api/van_management.php?action=mark_in', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(res => {
-            if(res.success) {
-                lastVanData = null; 
-                loadVanData();
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Return Van?',
+        text: "Mark van as Returned (In)?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, In'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('action', 'mark_in');
+            fd.append('id', id);
+            fetch('api/van_management.php?action=mark_in', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    lastVanData = null; 
+                    loadVanData();
+                    Swal.fire('Returned!', 'Van status updated to IN.', 'success');
+                }
+            });
+        }
+    });
 }
 
 function reloadData() {
@@ -374,7 +393,11 @@ function reloadData() {
 }
 
 function exportOrders() {
-    alert('Export feature coming soon!');
+    Swal.fire({
+        icon: 'info',
+        title: 'Coming Soon',
+        text: 'Export feature coming soon!'
+    });
 }
 </script>
 

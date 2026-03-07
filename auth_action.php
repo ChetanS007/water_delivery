@@ -17,7 +17,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE mobile = ?");
         $stmt->execute([$mobile]);
         if ($stmt->rowCount() > 0) {
-            echo "<script>alert('हा मोबाईल क्रमांक आधीच नोंदणीकृत आहे!'); window.location.href='index.php';</script>";
+            echo "
+            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <script>
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'थांबा!',
+                    text: 'हा मोबाईल क्रमांक आधीच नोंदणीकृत आहे!',
+                    confirmButtonText: 'ठीक आहे'
+                }).then(() => { window.location.href='index.php'; });
+            </script>";
             exit();
         }
 
@@ -32,7 +41,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $update = $pdo->prepare("UPDATE users SET qr_code = ? WHERE id = ?");
             $update->execute([$qr_code, $user_id]);
 
-            echo "<script>alert('नोंदणी यशस्वी झाली! कृपया लॉगिन करा.'); window.location.href='index.php';</script>";
+            echo "
+            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <script>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'यशस्वी!',
+                    text: 'नोंदणी यशस्वी झाली! कृपया लॉगिन करा.',
+                    confirmButtonText: 'ठीक आहे'
+                }).then(() => { window.location.href='index.php'; });
+            </script>";
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
         }
@@ -49,12 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($admin && password_verify($password, $admin['password'])) {
                 $_SESSION['user_id'] = $admin['id'];
-                $_SESSION['role'] = $admin['role'];
+                $_SESSION['role'] = $admin['role']; // Role is Admin or Superadmin
                 $_SESSION['name'] = $admin['full_name'];
                 header("Location: admin/dashboard.php");
                 exit();
             }
-            echo "<script>alert('अवैध ॲडमिन कडेन्शियल्स!'); window.location.href='admin/login.php';</script>";
+            $_SESSION['admin_login_error'] = "Invalid username or password. Please try again.";
+            header("Location: admin/login.php");
             exit();
         } 
         
@@ -77,7 +96,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     exit();
                 }
                 // If failed delivery login, show error specific to delivery
-                 echo "<script>alert('अवैध डिलिव्हरी पार्टनर कडेन्शियल्स!'); window.location.href='delivery/login.php';</script>";
+                 echo "
+                 <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                 <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'चूक!',
+                        text: 'अवैध डिलिव्हरी पार्टनर कडेन्शियल्स!',
+                        confirmButtonText: 'ठीक आहे'
+                    }).then(() => { window.location.href='delivery/login.php'; });
+                 </script>";
                  exit();
             }
 
@@ -95,22 +123,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit();
             }
 
-            // Fallback: If not finding customer, technically could check delivery boy here too if we want a universal login, 
-            // but strict separation is better for security and clarity.
-            // However, to keep backward compatibility if no hidden field:
-            if ($login_type !== 'delivery') {
-                 // Try checking delivery boy just in case they used the main login but valid delivery creds? 
-                 // No, requested behavior is separating them or making sure delivery redirects to delivery.
-                 // Given the specific request: "when i'm login from delivery boy... redirects user landing page"
-                 // This implies they might be logging in from the *main* login modal?
-                 // Or they are logging in from delivery login page but it's treating them as user?
-                 // Let's assume they use delivery login page.
-            }
-
-            echo "<script>alert('अवैध मोबाईल क्रमांक किंवा पासवर्ड!'); window.location.href='index.php';</script>";
+            echo "
+            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <script>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'चूक!',
+                    text: 'अवैध मोबाईल क्रमांक किंवा पासवर्ड!',
+                    confirmButtonText: 'ठीक आहे'
+                }).then(() => { window.location.href='index.php'; });
+            </script>";
         }
-
-        echo "<script>alert('अवैध मोबाईल क्रमांक किंवा पासवर्ड!'); window.location.href='index.php';</script>";
     }
 }
 ?>

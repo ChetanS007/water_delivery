@@ -57,6 +57,8 @@ $deliveries = [];
         .leaflet-routing-container { max-height: 150px; overflow-y: auto; border-radius: 10px; font-size: 11px; }
         .navbar { background: linear-gradient(90deg, #0E3A66 0%, #1a324b 100%) !important; }
     </style>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light">
 
@@ -189,7 +191,33 @@ $deliveries = [];
                 <p class="text-muted mt-2">कॅमेरा ग्राहकाच्या QR कोडकडे धरा</p>
                 <form id="completeForm" action="complete_delivery.php" method="POST">
                     <input type="hidden" name="assignment_id" id="assignment_id">
+                    <input type="hidden" name="can_received" id="can_received_input" value="0">
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Can Received Confirmation Modal -->
+<div class="modal fade" id="canReceivedModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-body p-4 text-center">
+                <i class="fa-solid fa-bottle-water text-primary fs-1 mb-3"></i>
+                <h4 class="fw-bold mb-3">रिकामी कॅन प्राप्त झाली का?</h4>
+                <p class="text-muted mb-4">(Has the water can been received?)</p>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-success w-100 py-2 fw-bold rounded-pill" onclick="confirmCanStatus(1)">
+                            <i class="fa-solid fa-check me-2"></i> हो (Yes)
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-danger w-100 py-2 fw-bold rounded-pill" onclick="confirmCanStatus(0)">
+                            <i class="fa-solid fa-times me-2"></i> नाही (No)
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -287,7 +315,7 @@ $deliveries = [];
                     loadVanData(true);
                 }
             }
-        }, 30000);
+        }, 10000); // 10 seconds for more live feeling
     });
 
     let watchId = null;
@@ -600,18 +628,69 @@ $deliveries = [];
     function onScanSuccess(decodedText, decodedResult) {
         if (decodedText === currentTargetQR) {
              html5QrcodeScanner.clear();
+             const scanModal = bootstrap.Modal.getInstance(document.getElementById('scanModal'));
+             if(scanModal) scanModal.hide();
+             
              document.getElementById('assignment_id').value = currentAssignmentId;
-             document.getElementById('completeForm').submit();
+             showCanReceivedModal();
         } else {
-            alert("चुकीचा QR कोड! कृपया योग्य ग्राहकाचा कोड स्कॅन करा.");
+            Swal.fire({
+                icon: 'error',
+                title: 'चुकीचा QR कोड',
+                text: 'कृपया योग्य ग्राहकाचा कोड स्कॅन करा.',
+                confirmButtonText: 'ठीक आहे'
+            });
         }
     }
 
     function completeDelivery(assignmentId) {
-        if(confirm('तुम्हाला खात्री आहे की तुम्ही ही ऑर्डर पोहोचवली (DELIVERED) म्हणून चिन्हांकित करू इच्छिता?')) {
-            document.getElementById('assignment_id').value = assignmentId;
-            document.getElementById('completeForm').submit();
-        }
+        document.getElementById('assignment_id').value = assignmentId;
+        showCanReceivedModal();
+    }
+
+    function showCanReceivedModal() {
+        const modal = new bootstrap.Modal(document.getElementById('canReceivedModal'));
+        modal.show();
+    }
+
+    function confirmCanStatus(status) {
+        document.getElementById('can_received_input').value = status;
+        
+        const fd = new FormData();
+        fd.append('assignment_id', document.getElementById('assignment_id').value);
+        fd.append('can_received', status);
+
+        // Hide Modal
+        bootstrap.Modal.getInstance(document.getElementById('canReceivedModal')).hide();
+
+        fetch('complete_delivery.php', {
+            method: 'POST',
+            body: fd
+        })
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                Swal.fire({
+                    icon: res.already_done ? 'info' : 'success',
+                    title: res.already_done ? 'माहिती' : 'यशस्वी',
+                    text: res.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                fetchDeliveries(); // Dynamically update the list
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'त्रुटी!',
+                    text: res.message,
+                    confirmButtonText: 'ठीक आहे'
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'नेटवर्क त्रुटी', text: 'डिलिव्हरी सबमिट करता आली नाही.' });
+        });
     }
 
     function stopScan() {
@@ -624,7 +703,12 @@ $deliveries = [];
     // --- NAVIGATION LOGIC ---
     function startNavigation(targetLat, targetLng, targetName) {
         if (!currentLat || !currentLng) {
-            alert("तुमचे सध्याचे स्थान मिळण्याची प्रतीक्षा करत आहे. कृपया GPS सुरू असल्याची खात्री करा.");
+            Swal.fire({
+                icon: 'info',
+                title: 'प्रतीक्षा करा',
+                text: 'तुमचे सध्याचे स्थान मिळण्याची प्रतीक्षा करत आहे. कृपया GPS सुरू असल्याची खात्री करा.',
+                confirmButtonText: 'ठीक आहे'
+            });
             return;
         }
 
@@ -782,35 +866,57 @@ $deliveries = [];
     }
 
     function markVanOut(id) {
-        if(confirm('या व्हॅनसाठी डिलिव्हरी सुरू करायची का? स्थिती OUT मध्ये बदलली जाईल.')) {
-            const fd = new FormData();
-            fd.append('id', id);
-            fetch('../admin/api/van_management.php?action=mark_out', { method: 'POST', body: fd })
-            .then(r => r.json())
-            .then(res => {
-                if(res.success) {
-                    lastVanData = null; 
-                    loadVanData();
-                    fetchDeliveries(); // Refresh stats
-                }
-            });
-        }
+        Swal.fire({
+            title: 'डिलिव्हरी सुरू करायची का?',
+            text: 'स्थिती OUT मध्ये बदलली जाईल.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'हो, सुरू करा',
+            cancelButtonText: 'रद्द करा'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const fd = new FormData();
+                fd.append('id', id);
+                fetch('../admin/api/van_management.php?action=mark_out', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if(res.success) {
+                        lastVanData = null; 
+                        loadVanData();
+                        fetchDeliveries();
+                    }
+                });
+            }
+        });
     }
 
     function markVanIn(id) {
-        if(confirm('या व्हॅनची डिलिव्हरी पूर्ण झाली का? स्थिती IN मध्ये बदलली जाईल.')) {
-            const fd = new FormData();
-            fd.append('id', id);
-            fetch('../admin/api/van_management.php?action=mark_in', { method: 'POST', body: fd })
-            .then(r => r.json())
-            .then(res => {
-                if(res.success) {
-                    lastVanData = null; 
-                    loadVanData();
-                    fetchDeliveries(); // Refresh stats
-                }
-            });
-        }
+        Swal.fire({
+            title: 'डिलिव्हरी पूर्ण झाली का?',
+            text: 'स्थिती IN मध्ये बदलली जाईल.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'हो, पूर्ण झाली',
+            cancelButtonText: 'रद्द करा'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const fd = new FormData();
+                fd.append('id', id);
+                fetch('../admin/api/van_management.php?action=mark_in', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(res => {
+                    if(res.success) {
+                        lastVanData = null; 
+                        loadVanData();
+                        fetchDeliveries();
+                    }
+                });
+            }
+        });
     }
 
     // --- FORM SUBMISSION ---
@@ -831,15 +937,29 @@ $deliveries = [];
                 form.reset();
                 lastVanData = null; 
                 loadVanData();
-                fetchDeliveries(); // Refresh top stats
-                alert("व्हॅन यशस्वीरित्या पाठवली!");
+                fetchDeliveries();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'यशस्वी!',
+                    text: 'व्हॅन यशस्वीरित्या पाठवली!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
             } else {
-                alert(res.message || "व्हॅन जोडताना त्रुटी आली");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'त्रुटी!',
+                    text: res.message || "व्हॅन जोडताना त्रुटी आली"
+                });
             }
         })
         .catch(err => {
             console.error(err);
-            alert("सिस्टम त्रुटी: व्हॅन पाठवता आली नाही.");
+            Swal.fire({
+                icon: 'error',
+                title: 'सिस्टम त्रुटी',
+                text: 'व्हॅन पाठवता आली नाही.'
+            });
         });
     }
 </script>

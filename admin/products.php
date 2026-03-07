@@ -266,8 +266,10 @@ function submitForm() {
         if(res.success) {
             bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
             loadProducts();
-            alert(res.message);
-        } else alert(res.message);
+            Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 2000, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+        }
     });
 }
 
@@ -293,12 +295,27 @@ function editProduct(id) {
 }
 
 function deleteProduct(id) {
-    if(confirm('Delete this product permanently?')) {
-        const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
-        fetch('api/products.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-            if(res.success) loadProducts(); else alert(res.message);
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Delete this product permanently?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+            fetch('api/products.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    Swal.fire('Deleted!', 'Product has been removed.', 'success');
+                    loadProducts();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 
 function viewProduct(id) {

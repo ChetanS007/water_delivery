@@ -99,6 +99,9 @@ function loadAllReports() {
     loadBilling();
 }
 
+// Polling every 60 seconds (Reports don't need extremely high frequency)
+setInterval(loadAllReports, 60000);
+
 const commonOptions = {
     chart: { height: 350, fontFamily: 'Poppins, sans-serif' },
     responsive: [{ breakpoint: 480, options: { chart: { width: 300 }, legend: { position: 'bottom' } } }]

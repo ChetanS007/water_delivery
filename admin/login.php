@@ -6,6 +6,11 @@ if(isset($_SESSION['user_id'])) {
         exit();
     }
 }
+$error_msg = '';
+if(isset($_SESSION['admin_login_error'])) {
+    $error_msg = $_SESSION['admin_login_error'];
+    unset($_SESSION['admin_login_error']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,6 +68,18 @@ if(isset($_SESSION['user_id'])) {
         </div>
     </form>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<?php if($error_msg): ?>
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: '<?php echo addslashes($error_msg); ?>',
+        confirmButtonText: 'OK'
+    });
+</script>
+<?php endif; ?>
 
 </body>
 </html>

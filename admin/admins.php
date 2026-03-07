@@ -97,16 +97,34 @@ if ($_SESSION['role'] !== 'Superadmin') {
 </div>
 
 <script>
+let lastAdminData = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadAdmins();
+    // Poll every 10 seconds
+    setInterval(() => {
+        const modal = document.getElementById('adminModal');
+        if (!modal.classList.contains('show')) {
+            loadAdmins(true);
+        }
+    }, 10000);
 });
 
-function loadAdmins() {
+function loadAdmins(isPoll = false) {
     const tbody = document.getElementById('adminTableBody');
+    
+    if (!isPoll) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        lastAdminData = null;
+    }
+
     fetch('api/admins.php?action=fetch_all')
     .then(r => r.json())
     .then(res => {
         if(res.success) {
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastAdminData === currentDataStr) return;
+            lastAdminData = currentDataStr;
+
             tbody.innerHTML = '';
             res.data.forEach(admin => {
                 tbody.innerHTML += `
@@ -141,10 +159,12 @@ function submitAdminForm() {
     if(!form.checkValidity()) { form.reportValidity(); return; }
     const fd = new FormData(form);
     fetch('api/admins.php', { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-        alert(res.message);
         if(res.success) {
+            Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 2000, showConfirmButton: false });
             bootstrap.Modal.getInstance(document.getElementById('adminModal')).hide();
             loadAdmins();
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: res.message });
         }
     });
 }
@@ -173,12 +193,27 @@ function editAdmin(id) {
 }
 
 function deleteAdmin(id) {
-    if(confirm("Delete this admin?")) {
-        const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
-        fetch('api/admins.php', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
-            loadAdmins();
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Delete this admin?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+            fetch('api/admins.php', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+                if(res.success) {
+                    Swal.fire('Deleted!', 'Admin has been removed.', 'success');
+                    loadAdmins();
+                } else {
+                    Swal.fire('Error!', res.message, 'error');
+                }
+            });
+        }
+    });
 }
 </script>
 <?php include 'includes/footer.php'; ?>

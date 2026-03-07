@@ -10,59 +10,6 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Admin', 'Supe
     exit();
 }
 
-$message = '';
-$messageType = '';
-
-// Handle Approval
-if (isset($_POST['action']) && $_POST['action'] === 'approve' && isset($_POST['payment_id'])) {
-    $paymentId = $_POST['payment_id'];
-    $stmt = $pdo->prepare("UPDATE customer_payments SET status = 'Approved' WHERE id = ?");
-    if ($stmt->execute([$paymentId])) {
-        $message = "Payment approved successfully.";
-        $messageType = "success";
-    } else {
-        $message = "Failed to approve payment.";
-        $messageType = "danger";
-    }
-}
-
-// Fetch Payments with User and Billing Info
-$sql = "
-    SELECT 
-        cp.id,
-        cp.user_id,
-        u.full_name as user_name,
-        cp.amount as submitted_amount,
-        cp.payment_month,
-        cp.screenshot_url,
-        cp.status,
-        cp.created_at,
-        
-        /* Total Bill for the User */
-        (
-            SELECT COALESCE(SUM(oi2.quantity * p2.price), 0)
-            FROM daily_deliveries dd2
-            JOIN orders o2 ON dd2.subscription_id = o2.id
-            JOIN order_items oi2 ON o2.id = oi2.order_id
-            JOIN products p2 ON oi2.product_id = p2.id
-            WHERE o2.user_id = cp.user_id AND dd2.status = 'Delivered'
-        ) as total_bill,
-
-        /* Total Paid by the User (Approved only) */
-        (
-            SELECT COALESCE(SUM(amount), 0)
-            FROM customer_payments
-            WHERE user_id = cp.user_id AND status = 'Approved'
-        ) as total_paid
-
-    FROM customer_payments cp
-    JOIN users u ON cp.user_id = u.id
-    ORDER BY cp.created_at DESC
-";
-
-$stmt = $pdo->query($sql);
-$payments = $stmt->fetchAll();
-
 include 'includes/header.php';
 ?>
 
@@ -72,14 +19,10 @@ include 'includes/header.php';
             <h3 class="fw-bold text-dark mb-1">Customer Payments</h3>
             <p class="text-muted small mb-0">Review and approve payment submissions from customers.</p>
         </div>
+        <!-- <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="loadPayments()">
+            <i class="fa-solid fa-sync me-1"></i> Refresh
+        </button> -->
     </div>
-
-    <?php if ($message): ?>
-        <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show shadow-sm" role="alert">
-            <?php echo $message; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
 
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-0">
@@ -99,55 +42,13 @@ include 'includes/header.php';
                             <th class="text-end pe-4">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php if (empty($payments)): ?>
-                            <tr>
-                                <td colspan="10" class="text-center py-5 text-muted">No payments found.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($payments as $pay): ?>
-                                <?php 
-                                    $pending = $pay['total_bill'] - $pay['total_paid'];
-                                    $statusClass = $pay['status'] === 'Approved' ? 'success' : ($pay['status'] === 'Pending' ? 'warning' : 'danger');
-                                    $monthName = $pay['payment_month'] ? date('F Y', strtotime($pay['payment_month'] . '-01')) : 'General';
-                                ?>
-                                <tr>
-                                    <td class="ps-4 fw-bold text-muted">#<?php echo $pay['id']; ?></td>
-                                    <td>
-                                        <div class="fw-bold"><?php echo htmlspecialchars($pay['user_name']); ?></div>
-                                        <small class="text-muted"><?php echo date('d M, Y h:i A', strtotime($pay['created_at'])); ?></small>
-                                    </td>
-                                    <td><span class="badge bg-light text-dark border"><?php echo $monthName; ?></span></td>
-                                    <td class="fw-bold text-primary">₹<?php echo number_format($pay['submitted_amount'], 2); ?></td>
-                                    <td>₹<?php echo number_format($pay['total_bill'], 2); ?></td>
-                                    <td class="text-success">₹<?php echo number_format($pay['total_paid'], 2); ?></td>
-                                    <td class="text-danger fw-bold">₹<?php echo number_format($pending, 2); ?></td>
-                                    <td>
-                                        <a href="../<?php echo htmlspecialchars($pay['screenshot_url']); ?>" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
-                                            <i class="fa-solid fa-eye me-1"></i> View
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-<?php echo $statusClass; ?> rounded-pill px-3">
-                                            <?php echo $pay['status'] === 'Approved' ? 'Payment Successful' : $pay['status']; ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <?php if ($pay['status'] === 'Pending'): ?>
-                                            <form action="payments.php" method="POST" class="d-inline">
-                                                <input type="hidden" name="payment_id" value="<?php echo $pay['id']; ?>">
-                                                <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="return confirm('Approve this payment?')">
-                                                    Approve
-                                                </button>
-                                            </form>
-                                        <?php else: ?>
-                                            <button class="btn btn-sm btn-light rounded-pill px-3 text-muted" disabled>Processed</button>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                    <tbody id="paymentsTableBody">
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="mt-2 text-muted small">Loading payments...</div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -155,4 +56,148 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Screenshot View Modal -->
+<div class="modal fade" id="screenshotModal" tabindex="-1" aria-labelledby="screenshotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content " style="background-color: #00000082;">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center">
+                <img id="modalScreenshotImg" src="" alt="Payment Screenshot" class="img-fluid rounded" style="max-height: 90vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let lastPaymentData = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadPayments();
+    
+    // Auto-refresh every 10 seconds to detect new payments in real-time
+    setInterval(() => {
+        loadPayments(true);
+    }, 10000);
+});
+
+function loadPayments(isPoll = false) {
+    const tbody = document.getElementById('paymentsTableBody');
+    
+    fetch('api/payments.php?action=fetch_all')
+    .then(r => r.json())
+    .then(res => {
+        if(res.success) {
+            // Check if data actually changed to avoid unnecessary re-renders
+            const currentDataStr = JSON.stringify(res.data);
+            if (lastPaymentData === currentDataStr) return;
+            lastPaymentData = currentDataStr;
+
+            if(res.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-muted">No payments found.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            res.data.forEach(pay => {
+                const totalBill = parseFloat(pay.total_bill);
+                const totalPaid = parseFloat(pay.total_paid);
+                const pending = totalBill - totalPaid;
+                const statusClass = pay.status === 'Approved' ? 'success' : (pay.status === 'Remaining' ? 'warning' : (pay.status === 'Pending' ? 'warning' : 'danger'));
+                const monthName = pay.payment_month ? new Date(pay.payment_month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'General';
+                
+                // Show the exact status in the Admin panel
+                const displayStatus = pay.status;
+                
+                let actionBtn = `<button class="btn btn-sm btn-light rounded-pill px-3 text-muted" disabled>Processed</button>`;
+                
+                if (pay.status === 'Pending') {
+                    const pendingAfter = totalBill - (totalPaid + parseFloat(pay.submitted_amount));
+                    if (pendingAfter > 0.01) {
+                         actionBtn = `<button type="button" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold text-white" onclick="approvePayment(${pay.id}, 'Remaining')">Remaining</button>`;
+                    } else {
+                         actionBtn = `<button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="approvePayment(${pay.id}, 'Approved')">Approve</button>`;
+                    }
+                }
+
+                html += `
+                    <tr>
+                        <td class="ps-4 fw-bold text-muted">#${pay.id}</td>
+                        <td>
+                            <div class="fw-bold text-dark">${pay.user_name}</div>
+                            <small class="text-muted">${new Date(pay.created_at).toLocaleString()}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">${monthName}</span></td>
+                        <td class="fw-bold text-primary">₹${parseFloat(pay.submitted_amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <td>
+                            <div class="small fw-bold">₹${totalBill.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                            <small class="text-muted">Total for Month</small>
+                        </td>
+                        <td>
+                            <div class="small text-success fw-bold">₹${totalPaid.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                            <small class="text-muted">Paid for Month</small>
+                        </td>
+                        <td class="text-danger fw-bold">₹${pending.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info rounded-pill" onclick="viewScreenshot('../${pay.screenshot_url}')">
+                                <i class="fa-solid fa-eye me-1"></i> View
+                            </button>
+                        </td>
+                        <td>
+                            <span class="badge bg-${statusClass} rounded-pill px-3">
+                                ${displayStatus}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">${actionBtn}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    })
+    .catch(err => {
+        console.error('Error loading payments:', err);
+        if(!isPoll) tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5 text-danger">Failed to load payments.</td></tr>';
+    });
+}
+
+function viewScreenshot(imageUrl) {
+    document.getElementById('modalScreenshotImg').src = imageUrl;
+    const modal = new bootstrap.Modal(document.getElementById('screenshotModal'));
+    modal.show();
+}
+
+function approvePayment(id, status = 'Approved') {
+    const title = status === 'Remaining' ? 'Confirm Partial Payment?' : 'Approve Full Payment?';
+    const text = status === 'Remaining' ? 'This will mark the payment as partial (Remaining).' : 'This will mark the bill as fully Paid (Approved).';
+    
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: status === 'Remaining' ? '#0dcaf0' : '#198754',
+        confirmButtonText: 'Yes, Process'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('action', 'approve');
+            fd.append('payment_id', id);
+            fd.append('status', status);
+
+            fetch('api/payments.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    Swal.fire({ icon: 'success', title: 'Approved!', text: res.message, timer: 2000, showConfirmButton: false });
+                    loadPayments(); // Instantly refresh data
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+                }
+            });
+        }
+    });
+}
+</script>
 <?php include 'includes/footer.php'; ?>
