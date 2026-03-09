@@ -12,7 +12,7 @@ if (!isset($sysLogo)) {
         <div class="row gy-5">
             <div class="col-lg-5">
                 <div class="mb-4">
-                    <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal" style="max-height: 50px;">
+                    <img id="main-footer-logo" src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal" style="max-height: 50px;">
                 </div>
                 <p class="mb-4 small">तुमच्या दारात आरोग्य आणि शुद्धता पोहोचवत आहोत. <br> आजच हजारो आनंदी ग्राहकांमध्ये सामील व्हा.</p>
                 <div class="footer-social">

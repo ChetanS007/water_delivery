@@ -21,34 +21,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     $setting_key = $_POST['setting_key'] ?? '';
     
     if ($setting_key && isset($_FILES[$setting_key])) {
+        // Fetch old logo to delete later
+        $stmt_old = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $stmt_old->execute([$setting_key]);
+        $oldPath = $stmt_old->fetchColumn();
+
         $targetDir = "../uploads/settings/";
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
 
-        $fileName = $setting_key . "_" . time() . "_" . basename($_FILES[$setting_key]["name"]);
+        $extension = strtolower(pathinfo($_FILES[$setting_key]["name"], PATHINFO_EXTENSION));
+        $cleanName = preg_replace("/[^a-zA-Z0-9\._-]/", "_", pathinfo($_FILES[$setting_key]["name"], PATHINFO_FILENAME));
+        $fileName = $setting_key . "_" . time() . "_" . $cleanName . "." . $extension;
         $targetFilePath = $targetDir . $fileName;
-        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
 
         $allowTypes = array('jpg', 'png', 'jpeg', 'gif', 'svg', 'webp');
-        if (in_array(strtolower($fileType), $allowTypes)) {
+        if (in_array($extension, $allowTypes)) {
             if (move_uploaded_file($_FILES[$setting_key]["tmp_name"], $targetFilePath)) {
                 $dbPath = "uploads/settings/" . $fileName;
                 
                 $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?");
                 if ($stmt->execute([$dbPath, $setting_key])) {
+                    // Delete old file if it exists and is not the default
+                    if ($oldPath && file_exists("../" . $oldPath) && !str_contains($oldPath, 'default')) {
+                        @unlink("../" . $oldPath);
+                    }
                     echo json_encode(['success' => true, 'message' => ucfirst(str_replace('_', ' ', $setting_key)) . ' updated successfully!', 'path' => $dbPath]);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Failed to update database.']);
                 }
             } else {
-                echo json_encode(['success' => false, 'message' => 'Error uploading file.']);
+                echo json_encode(['success' => false, 'message' => 'Error uploading file. Check folder permissions.']);
             }
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid file type. Allowed: JPG, PNG, WEBP, SVG.']);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'Missing data.']);
+        echo json_encode(['success' => false, 'message' => 'Missing data or file too large.']);
     }
     exit();
 }
@@ -149,10 +159,20 @@ function updateSetting(e, key) {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            Swal.fire({ icon: 'success', title: 'Updated!', text: res.message, timer: 2000, showConfirmButton: false });
-            // Update preview dynamically
+            Swal.fire({ icon: 'success', title: 'Updated!', text: res.message, timer: 1500, showConfirmButton: false });
+            
+            const newSrc = '../' + res.path + '?v=' + new Date().getTime();
+            
             if (key === 'logo') {
-                document.getElementById('logoPreview').src = '../' + res.path;
+                // Update Preview
+                document.getElementById('logoPreview').src = newSrc;
+                // Update Sidebar Logo
+                const sidebarLogo = document.getElementById('admin-sidebar-logo');
+                if (sidebarLogo) sidebarLogo.src = newSrc;
+                // Update any other logos matching IDs across modules
+                document.querySelectorAll('#main-nav-logo, #main-footer-logo').forEach(img => {
+                    img.src = res.path + '?v=' + new Date().getTime();
+                });
             } else if (key === 'payment_qr') {
                 let img = document.getElementById('qrPreview');
                 if (!img) {
@@ -164,7 +184,7 @@ function updateSetting(e, key) {
                     img.style.width = 'auto';
                     document.getElementById('qrContainer').appendChild(img);
                 }
-                img.src = '../' + res.path;
+                img.src = newSrc;
             }
             form.reset();
         } else {

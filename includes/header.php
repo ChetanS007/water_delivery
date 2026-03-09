@@ -31,7 +31,7 @@ $sysLogo = $stmt->fetchColumn() ?: 'https://uaques.smartdemowp.com/wp-content/th
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-                 <img src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal">
+                 <img id="main-nav-logo" src="<?php echo htmlspecialchars($sysLogo); ?>" alt="Sudha Jal">
             </a>
             
             <!-- Phone Center -->
