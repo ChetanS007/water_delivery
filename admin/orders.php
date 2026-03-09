@@ -150,7 +150,7 @@ function loadData(action, isPoll = false) {
     // Set Header (Static, no need to update on poll usually, but safe to leave)
     thead.innerHTML = `
         <tr>
-            <th class="ps-4">Sub ID</th>
+            <th class="ps-4">Sr. No.</th>
             <th>Customer</th>
             <th>Product & Plan</th>
             <th>Assigned To</th>
@@ -177,7 +177,8 @@ function loadData(action, isPoll = false) {
             }
 
             let html = '';
-            res.data.forEach(item => {
+            res.data.forEach((item, index) => {
+                let srNo = index + 1;
                 // Today's Dispatch Row
                 const statusClass = item.today_status === 'Delivered' ? 'success' : (item.today_status === 'Missed' ? 'danger' : 'warning');
                 
@@ -198,7 +199,7 @@ function loadData(action, isPoll = false) {
                 
                 html += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${item.sub_id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="d-flex flex-column">
                                 <span class="fw-medium">${item.customer_name}</span>

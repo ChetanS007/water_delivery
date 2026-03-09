@@ -26,7 +26,7 @@ if ($_SESSION['role'] !== 'Superadmin') {
             <table class="table table-hover align-middle mb-0" id="adminsTable">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-4">Sr. No.</th>
                         <th>Name</th>
                         <th>Contact</th>
                         <th>Role</th>
@@ -126,10 +126,11 @@ function loadAdmins(isPoll = false) {
             lastAdminData = currentDataStr;
 
             tbody.innerHTML = '';
-            res.data.forEach(admin => {
+            res.data.forEach((admin, index) => {
+                let srNo = index + 1;
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4 fw-bold">#${admin.id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>${admin.full_name}</td>
                         <td>${admin.mobile}<br><small class='text-muted'>${admin.email || ''}</small></td>
                         <td><span class="badge bg-info text-dark">${admin.role}</span></td>

@@ -101,3 +101,13 @@ CREATE TABLE IF NOT EXISTS cart (
 INSERT INTO admins (full_name, mobile, password, role, status) VALUES 
 ('Super Admin', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Superadmin', 1);
 -- Password is 'password'
+
+-- 9. Payment History
+CREATE TABLE IF NOT EXISTS payment_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    payment_id INT,
+    amount DECIMAL(10,2),
+    payment_type VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES customer_payments(id) ON DELETE CASCADE
+);

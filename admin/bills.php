@@ -32,7 +32,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">Sub ID</th>
+                        <th class="ps-4">Sr. No.</th>
                         <th>Customer Name</th>
                         <th>Subscription Start Date</th>
                         <th>Total Bill (Calculated)</th>
@@ -118,7 +118,8 @@ function loadBills(isPoll = false) {
             }
 
             let html = '';
-            res.data.forEach(bill => {
+            res.data.forEach((bill, index) => {
+                let srNo = index + 1;
                 const startDate = new Date(bill.start_date).toLocaleDateString();
                 const totalBill = parseFloat(bill.calculated_bill).toFixed(2);
                 const planAmount = parseFloat(bill.plan_amount).toFixed(2);
@@ -127,7 +128,7 @@ function loadBills(isPoll = false) {
                 
                 html += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${bill.sub_id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td class="fw-medium">${bill.customer_name}</td>
                         <td>${startDate}</td>
                         <td><span class="badge bg-success fs-6">₹${totalBill}</span> <small class="text-muted d-block">${bill.delivered_count} deliveries</small></td>

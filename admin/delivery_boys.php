@@ -30,7 +30,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-4">Sr. No.</th>
                         <th>Name</th>
                         <th>Mobile</th>
                         <th>Status</th>
@@ -185,14 +185,17 @@ function loadBoys(page = 1, isPoll = false) {
                 return;
             }
 
-            res.data.forEach(boy => {
+            res.data.forEach((boy, index) => {
+                const limit = res.pagination?.limit || 10;
+                let srNo = (page - 1) * limit + index + 1;
+                
                 const status = boy.status == 1 
                     ? '<span class="badge bg-success-subtle text-success">Active</span>' 
                     : '<span class="badge bg-danger-subtle text-danger">Inactive</span>';
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${boy.id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td class="fw-medium text-dark">${boy.full_name}</td>
                         <td>${boy.mobile}</td>
                         <td>${status}</td>

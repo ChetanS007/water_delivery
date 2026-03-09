@@ -18,15 +18,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->execute([$mobile]);
         if ($stmt->rowCount() > 0) {
             echo "
-            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name='viewport' content='width=device-width, initial-scale=1'>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                <style>body { background-color: #f3f4f6; }</style>
+            </head>
+            <body>
             <script>
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'थांबा!',
-                    text: 'हा मोबाईल क्रमांक आधीच नोंदणीकृत आहे!',
-                    confirmButtonText: 'ठीक आहे'
-                }).then(() => { window.location.href='index.php'; });
-            </script>";
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'थांबा!',
+                        text: 'हा मोबाईल क्रमांक आधीच नोंदणीकृत आहे!',
+                        confirmButtonText: 'ठीक आहे'
+                    }).then(() => { window.location.href='index.php'; });
+                });
+            </script>
+            </body>
+            </html>";
             exit();
         }
 
@@ -42,15 +53,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $update->execute([$qr_code, $user_id]);
 
             echo "
-            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name='viewport' content='width=device-width, initial-scale=1'>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                <style>body { background-color: #f3f4f6; }</style>
+            </head>
+            <body>
             <script>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'यशस्वी!',
-                    text: 'नोंदणी यशस्वी झाली! कृपया लॉगिन करा.',
-                    confirmButtonText: 'ठीक आहे'
-                }).then(() => { window.location.href='index.php'; });
-            </script>";
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'यशस्वी!',
+                        text: 'नोंदणी यशस्वी झाली! कृपया लॉगिन करा.',
+                        confirmButtonText: 'ठीक आहे'
+                    }).then(() => { window.location.href='index.php'; });
+                });
+            </script>
+            </body>
+            </html>";
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
         }
@@ -97,15 +119,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
                 // If failed delivery login, show error specific to delivery
                  echo "
-                 <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                 <!DOCTYPE html>
+                 <html>
+                 <head>
+                     <meta name='viewport' content='width=device-width, initial-scale=1'>
+                     <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                     <style>body { background-color: #f3f4f6; }</style>
+                 </head>
+                 <body>
                  <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'चूक!',
-                        text: 'अवैध डिलिव्हरी पार्टनर कडेन्शियल्स!',
-                        confirmButtonText: 'ठीक आहे'
-                    }).then(() => { window.location.href='delivery/login.php'; });
-                 </script>";
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'चूक!',
+                            text: 'अवैध डिलिव्हरी पार्टनर कडेन्शियल्स!',
+                            confirmButtonText: 'ठीक आहे'
+                        }).then(() => { window.location.href='delivery/login.php'; });
+                    });
+                 </script>
+                 </body>
+                 </html>";
                  exit();
             }
 
@@ -124,15 +157,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             echo "
-            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name='viewport' content='width=device-width, initial-scale=1'>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                <style>body { background-color: #f3f4f6; }</style>
+            </head>
+            <body>
             <script>
-                Swal.fire({
-                    icon: 'error',
-                    title: 'चूक!',
-                    text: 'अवैध मोबाईल क्रमांक किंवा पासवर्ड!',
-                    confirmButtonText: 'ठीक आहे'
-                }).then(() => { window.location.href='index.php'; });
-            </script>";
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'चूक!',
+                        text: 'अवैध मोबाईल क्रमांक किंवा पासवर्ड!',
+                        confirmButtonText: 'ठीक आहे'
+                    }).then(() => { window.location.href='index.php'; });
+                });
+            </script>
+            </body>
+            </html>";
         }
     }
 }

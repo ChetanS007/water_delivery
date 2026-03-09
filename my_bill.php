@@ -26,8 +26,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bill_status') {
         $stmt->execute([$user_id]);
         $totalAmt = $stmt->fetchColumn();
 
-        // Paid Amount (Approved or Remaining)
-        $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status IN ('Approved', 'Remaining')");
+        // Paid Amount (Officially Approved or Remaining)
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')");
         $stmt->execute([$user_id]);
         $paidAmt = $stmt->fetchColumn();
 
@@ -36,8 +36,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bill_status') {
             SELECT 
                 DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
                 SUM(oi.quantity * p.price) as monthly_total,
-                (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining')) as monthly_paid,
-                (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status
+                (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')) as monthly_paid,
+                (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status,
+                (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status = 'Pending') as monthly_pending_upload
             FROM daily_deliveries dd
             JOIN orders o ON dd.subscription_id = o.id
             JOIN order_items oi ON o.id = oi.order_id
@@ -46,7 +47,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bill_status') {
             GROUP BY month_key
             ORDER BY month_key DESC
         ");
-        $stmt->execute([$user_id, $user_id, $user_id]);
+        $stmt->execute([$user_id, $user_id, $user_id, $user_id]);
         $breakdown = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode([
@@ -108,6 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['screenshot'])) {
         if (move_uploaded_file($_FILES["screenshot"]["tmp_name"], $targetFilePath)) {
             $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, payment_month, screenshot_url, status) VALUES (?, ?, ?, ?, 'Pending')");
             if ($stmt->execute([$user_id, $amount, $month, $targetFilePath])) {
+                $paymentId = $pdo->lastInsertId();
+                $stmtHistory = $pdo->prepare("INSERT INTO payment_history (payment_id, amount, payment_type) VALUES (?, ?, 'User Paid')");
+                $stmtHistory->execute([$paymentId, $amount]);
+                
                 echo json_encode(['success' => true, 'message' => 'Sent to Admin.']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'पेमेंट तपशील जतन करण्यात अक्षम.']);
@@ -139,7 +144,7 @@ $stmt->execute([$user_id]);
 $totalAmount = $stmt->fetchColumn();
 
 // Calculate Paid Amount (Approved or Remaining)
-$stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status IN ('Approved', 'Remaining')");
+$stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')");
 $stmt->execute([$user_id]);
 $paidAmount = $stmt->fetchColumn();
 
@@ -150,8 +155,9 @@ $stmt = $pdo->prepare("
     SELECT 
         DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
         SUM(oi.quantity * p.price) as monthly_total,
-        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining')) as monthly_paid,
-        (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status
+        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')) as monthly_paid,
+        (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status,
+        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status = 'Pending') as monthly_pending_upload
     FROM daily_deliveries dd
     JOIN orders o ON dd.subscription_id = o.id
     JOIN order_items oi ON o.id = oi.order_id
@@ -160,7 +166,7 @@ $stmt = $pdo->prepare("
     GROUP BY month_key
     ORDER BY month_key DESC
 ");
-$stmt->execute([$user_id, $user_id, $user_id]);
+$stmt->execute([$user_id, $user_id, $user_id, $user_id]);
 $monthlyBreakdown = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include 'includes/header.php';
@@ -250,6 +256,9 @@ include 'includes/header.php';
                                 <?php 
                                     $monthlyPaid = (float)($row['monthly_paid'] ?? 0);
                                     $monthlyTotal = (float)$row['monthly_total'];
+                                    $monthlyPendingUpload = (float)($row['monthly_pending_upload'] ?? 0);
+                                    
+                                    // Pending bill is total minus what is actually approved
                                     $pendingBill = max(0, $monthlyTotal - $monthlyPaid);
                                     
                                     $statusText = 'प्रलंबित (Pending)';
@@ -258,12 +267,9 @@ include 'includes/header.php';
                                     if ($pendingBill <= 0) {
                                         $statusText = 'यशस्वी (Paid)';
                                         $statusClass = 'success';
-                                    } elseif ($row['last_payment_status'] === 'Pending') {
+                                    } elseif ($monthlyPendingUpload > 0) {
                                         $statusText = 'तपासणी सुरू (Checking)';
                                         $statusClass = 'warning';
-                                    } elseif ($row['last_payment_status'] === 'Remaining') {
-                                        $statusText = 'प्रलंबित (Pending)';
-                                        $statusClass = 'danger';
                                     }
                                 ?>
                                 <tr>
@@ -530,13 +536,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     res.breakdown.forEach(row => {
                         const monthlyPaid = parseFloat(row.monthly_paid || 0);
                         const monthlyTotal = parseFloat(row.monthly_total);
+                        const monthlyPendingUpload = parseFloat(row.monthly_pending_upload || 0);
                         const pendingBill = Math.max(0, monthlyTotal - monthlyPaid);
 
                         let statusText = 'प्रलंबित (Pending)';
                         let statusClass = 'danger';
-                        if (pendingBill <= 0) { statusText = 'यशस्वी (Paid)'; statusClass = 'success'; }
-                        else if (row.last_payment_status === 'Pending') { statusText = 'तपासणी सुरू (Checking)'; statusClass = 'warning'; }
-                        else if (row.last_payment_status === 'Remaining') { statusText = 'प्रलंबित (Pending)'; statusClass = 'danger'; }
+                        if (pendingBill <= 0) { 
+                            statusText = 'यशस्वी (Paid)'; 
+                            statusClass = 'success'; 
+                        } else if (monthlyPendingUpload > 0) { 
+                            statusText = 'तपासणी सुरू (Checking)'; 
+                            statusClass = 'warning'; 
+                        }
 
                         const monthDate = new Date(row.month_key + '-01');
                         const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });

@@ -45,7 +45,7 @@
             <table class="table table-hover align-middle mb-0" id="usersTable">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-4">Sr. No.</th>
                         <th>Customer</th>
                         <th>Contacts</th>
                         <th>Type</th>
@@ -373,14 +373,17 @@ function loadUsers(page = 1, isPoll = false) {
                 return;
             }
             
-            res.data.forEach(user => {
+            res.data.forEach((user, index) => {
+                let limit = res.pagination?.limit || 10;
+                let srNo = (page - 1) * limit + index + 1;
+                
                 const statusBadge = user.status == 1 
                     ? '<span class="badge bg-success-subtle text-success">Active</span>' 
                     : '<span class="badge bg-danger-subtle text-danger">Inactive</span>';
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${user.id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <div class="bg-light rounded-circle text-center me-2 text-primary fw-bold" style="width: 35px; height: 35px; line-height: 35px;">

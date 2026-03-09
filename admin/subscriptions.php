@@ -17,8 +17,8 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <select class="form-select" id="statusFilter" onchange="loadSubscriptions(1)">
-                    <option value="">All Statuses</option>
-                    <option value="Pending" selected>Pending Requests</option>
+                    <option value="" selected >All Statuses</option>
+                    <option value="Pending">Pending Requests</option>
                     <option value="Approved">Approved</option>
                     <option value="Assigned">Assigned</option>
                     <option value="Rejected">Rejected</option>
@@ -38,7 +38,7 @@
             <table class="table table-hover align-middle mb-0" id="subsTable">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-4">Sr. No.</th>
                         <th>Customer</th>
                         <th>Plan & Product</th>
                         <th>Actions</th>
@@ -122,7 +122,10 @@ function loadSubscriptions(page = 1, isPoll = false) {
             }
 
             let html = '';
-            res.data.forEach(sub => {
+            res.data.forEach((sub, index) => {
+                let limit = res.pagination?.limit || 10;
+                let srNo = (page - 1) * limit + index + 1;
+                
                 let actions = '';
                 if(sub.status === 'Pending') {
                     actions = `
@@ -140,7 +143,7 @@ function loadSubscriptions(page = 1, isPoll = false) {
 
                 html += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${sub.id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="d-flex flex-column">
                                 <span class="fw-medium">${sub.user_name}</span>

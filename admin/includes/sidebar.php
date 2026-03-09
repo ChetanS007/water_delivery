@@ -59,11 +59,22 @@ $role = $_SESSION['role'] ?? 'Admin';
             </a>
         </li>
 
-        <li class="sidebar-item">
+        <!-- <li class="sidebar-item">
             <a href="bills.php" class="sidebar-link <?php echo $current_page == 'bills.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-file-invoice-dollar"></i> Bill
             </a>
+        </li> -->
+        
+        <li class="sidebar-item">
+            <a href="bill&payments.php" class="sidebar-link <?php echo $current_page == 'bill_payments.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-file-invoice"></i> Bill & Payments
+            </a>
         </li>
+        <!-- <li class="sidebar-item">
+            <a href="payments.php" class="sidebar-link <?php echo $current_page == 'payments.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-wallet"></i> Payments
+            </a>
+        </li> -->
 
         <li class="sidebar-item">
             <a href="offers.php" class="sidebar-link <?php echo $current_page == 'offers.php' ? 'active' : ''; ?>">
@@ -91,11 +102,7 @@ $role = $_SESSION['role'] ?? 'Admin';
             </a>
         </li>
 
-        <li class="sidebar-item">
-            <a href="payments.php" class="sidebar-link <?php echo $current_page == 'payments.php' ? 'active' : ''; ?>">
-                <i class="fa-solid fa-wallet"></i> Payments
-            </a>
-        </li>
+        
         <li class="sidebar-item">
             <a href="settings.php" class="sidebar-link <?php echo $current_page == 'settings.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-gear"></i> Settings

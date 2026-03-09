@@ -30,7 +30,7 @@ include 'includes/header.php';
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4">ID</th>
+                            <th class="ps-4">Sr. No.</th>
                             <th>Customer Name</th>
                             <th>Bill Month</th>
                             <th>Submitted Amount</th>
@@ -100,7 +100,8 @@ function loadPayments(isPoll = false) {
             }
 
             let html = '';
-            res.data.forEach(pay => {
+            res.data.forEach((pay, index) => {
+                let srNo = index + 1;
                 const totalBill = parseFloat(pay.total_bill);
                 const totalPaid = parseFloat(pay.total_paid);
                 const pending = totalBill - totalPaid;
@@ -123,7 +124,7 @@ function loadPayments(isPoll = false) {
 
                 html += `
                     <tr>
-                        <td class="ps-4 fw-bold text-muted">#${pay.id}</td>
+                        <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="fw-bold text-dark">${pay.user_name}</div>
                             <small class="text-muted">${new Date(pay.created_at).toLocaleString()}</small>
