@@ -584,6 +584,20 @@ try {
         const div = document.getElementById('customDaysDiv');
         val === 'Custom' ? div.classList.remove('d-none') : div.classList.add('d-none');
     } 
+
+    // Auto-open Subscription Modal if not subscribed
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php if(isset($_SESSION['user_id']) && $_SESSION['role'] === 'Customer' && (!isset($_SESSION['is_subscribed']) || !$_SESSION['is_subscribed'])): ?>
+            // Find first product and activate the subscription modal
+            const firstProductBtn = document.querySelector('.product-card button[onclick^="openOrderModal"]');
+            if (firstProductBtn) {
+                // Short timeout to ensure all components are ready
+                setTimeout(() => {
+                    firstProductBtn.click();
+                }, 1000);
+            }
+        <?php endif; ?>
+    });
 </script>
 <script>
     // Initialize Map in Registration Modal

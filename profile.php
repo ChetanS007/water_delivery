@@ -26,6 +26,76 @@ $sub_sql = "
 $sub_stmt = $pdo->prepare($sub_sql);
 $sub_stmt->execute([$user_id]);
 $subscription = $sub_stmt->fetch(PDO::FETCH_ASSOC);
+
+// --- START PAYMENT UPLOAD LOGIC ---
+// AJAX: Handle Payment Upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['screenshot'])) {
+    header('Content-Type: application/json');
+    $amount = $_POST['amount'] ?? 0;
+    $month = $_POST['payment_month'] ?? '';
+    
+    $targetDir = "uploads/payments/";
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0777, true);
+    }
+
+    $fileName = "pay_" . $user_id . "_" . time() . "_" . basename($_FILES["screenshot"]["name"]);
+    $targetFilePath = $targetDir . $fileName;
+    $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+    $allowTypes = array('jpg', 'png', 'jpeg', 'webp', 'pdf');
+    if (in_array(strtolower($fileType), $allowTypes)) {
+        if (move_uploaded_file($_FILES["screenshot"]["tmp_name"], $targetFilePath)) {
+            $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, payment_month, screenshot_url, status) VALUES (?, ?, ?, ?, 'Pending')");
+            if ($stmt->execute([$user_id, $amount, $month, $targetFilePath])) {
+                $paymentId = $pdo->lastInsertId();
+                $stmtHistory = $pdo->prepare("INSERT INTO payment_history (payment_id, amount, payment_type) VALUES (?, ?, 'User Paid')");
+                $stmtHistory->execute([$paymentId, $amount]);
+                
+                echo json_encode(['success' => true, 'message' => 'पेमेंट सबमिट केले! ऍडमिनच्या मंजुरीची प्रतीक्षा करा.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'डेटाबेस त्रुटी.']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'अपलोड अयशस्वी.']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'अवैध फाइल प्रकार.']);
+    }
+    exit();
+}
+
+// Fetch Payment QR
+$stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'payment_qr'");
+$stmt->execute();
+$paymentQR = $stmt->fetchColumn() ?: '';
+
+// Calculate Pending Amount and Monthly Breakdown
+$stmt = $pdo->prepare("
+    SELECT 
+        DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
+        SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)) as monthly_total,
+        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')) as monthly_paid
+    FROM daily_deliveries dd
+    JOIN orders o ON dd.subscription_id = o.id
+    WHERE o.user_id = ? AND dd.status = 'Delivered'
+    GROUP BY month_key
+    ORDER BY month_key DESC
+");
+$stmt->execute([$user_id, $user_id]);
+$monthlyBreakdown = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$totalDeliveredBill = 0;
+foreach($monthlyBreakdown as $row) {
+    $totalDeliveredBill += (float)$row['monthly_total'];
+}
+
+$stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')");
+$stmt->execute([$user_id]);
+$totalPaid = $stmt->fetchColumn();
+
+$totalPending = max(0, $totalDeliveredBill - $totalPaid);
+// --- END PAYMENT UPLOAD LOGIC ---
 ?>
 <?php include 'includes/header.php'; ?>
 
@@ -68,7 +138,10 @@ $subscription = $sub_stmt->fetch(PDO::FETCH_ASSOC);
                     </div>
 
                     <div class="d-grid gap-2">
-                        <a href="my_bill.php" class="btn btn-outline-primary rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i> ऑर्डर इतिहास</a>
+                        <button class="btn btn-primary rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <i class="fa-solid fa-wallet me-2"></i> Check Payment Upload
+                        </button>
+                        <a href="my_bill.php" class="btn btn-outline-primary rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i> बिल आणि इतिहास</a>
                         <button class="btn btn-outline-secondary rounded-pill fw-bold" disabled><i class="fa-solid fa-pen me-2"></i> प्रोफाइल संपादित करा</button>
                     </div>
                 </div>
@@ -174,12 +247,84 @@ $subscription = $sub_stmt->fetch(PDO::FETCH_ASSOC);
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+</div>
 </div>
 
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">पेमेंट सबमिट करा</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning border-0 rounded-4 mb-4 shadow-sm">
+                    <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-circle-exclamation fs-3 me-3 text-warning"></i>
+                        <div>
+                            <div class="small fw-bold text-uppercase opacity-75">एकूण प्रलंबित रक्कम (Total Pending)</div>
+                            <h4 class="fw-bold mb-0 text-dark">₹<?php echo number_format($totalPending, 2); ?></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <p class="text-muted small mb-3">खालील QR कोड स्कॅन करा आणि तुमची प्रलंबित रक्कम भरा.</p>
+                    <div class="bg-light p-3 rounded-4 d-inline-block border">
+                        <?php if ($paymentQR): ?>
+                            <img src="<?php echo htmlspecialchars($paymentQR); ?>" alt="Payment QR" style="max-height: 200px; width: auto;">
+                        <?php else: ?>
+                            <div class="text-muted py-4">ऍडमिनने अद्याप QR कोड अपलोड केलेला नाही.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <form id="paymentUploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase opacity-75">महिना निवडा (Select Month)</label>
+                        <select name="payment_month" id="paymentMonthSelect" class="form-select" required>
+                            <option value="">प्रलंबित महिना निवडा...</option>
+                            <?php foreach ($monthlyBreakdown as $row): ?>
+                                <?php if ($row['monthly_total'] > (float)$row['monthly_paid']): ?>
+                                    <option value="<?php echo $row['month_key']; ?>" data-due="<?php echo ($row['monthly_total'] - $row['monthly_paid']); ?>">
+                                        <?php echo date('M Y', strtotime($row['month_key'])); ?> (₹<?php echo number_format($row['monthly_total'] - $row['monthly_paid'], 2); ?>)
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text small">केवळ प्रलंबित महिने येथे दिसतील.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase opacity-75">पेमेंट रक्कम (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">₹</span>
+                            <input type="number" step="0.01" name="amount" id="payAmountInput" class="form-control border-start-0 ps-0" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase opacity-75">स्क्रीनशॉट अपलोड करा</label>
+                        <input type="file" name="screenshot" id="screenshotInput" class="form-control" accept="image/*" required>
+                        <div class="form-text small">कृपया तुमच्या व्यवहार पुष्टीकरणाची स्पष्ट प्रतिमा अपलोड करा.</div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm">
+                        <i class="fa-solid fa-cloud-arrow-up me-2"></i> पेमेंट सबमिट करा
+                    </button>
+                    
+                    <div id="uploadStatus" class="mt-3 text-center d-none">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        <span class="small text-muted">प्रक्रिया करत आहे...</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <?php include 'includes/footer.php'; ?>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     var qrData = "<?php echo $user['qr_code']; ?>";
     if(qrData) {
@@ -187,6 +332,58 @@ $subscription = $sub_stmt->fetch(PDO::FETCH_ASSOC);
             text: qrData,
             width: 150,
             height: 150
+        });
+    }
+
+    // Payment Logic
+    const paymentForm = document.getElementById('paymentUploadForm');
+    const monthSelect = document.getElementById('paymentMonthSelect');
+    const amountInput = document.getElementById('payAmountInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    if (monthSelect) {
+        monthSelect.addEventListener('change', function() {
+            const option = this.options[this.selectedIndex];
+            const due = option.getAttribute('data-due');
+            if(due) {
+                amountInput.value = parseFloat(due).toFixed(2);
+            }
+        });
+    }
+
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            uploadStatus.classList.remove('d-none');
+
+            const formData = new FormData(this);
+            fetch('profile.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(res => {
+                submitBtn.disabled = false;
+                uploadStatus.classList.add('d-none');
+                if(res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'यशस्वी!',
+                        text: res.message,
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'त्रुटी!', text: res.message });
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                uploadStatus.classList.add('d-none');
+                Swal.fire({ icon: 'error', title: 'त्रुटी!', text: 'सर्व्हरशी संपर्क होऊ शकला नाही.' });
+            });
         });
     }
 

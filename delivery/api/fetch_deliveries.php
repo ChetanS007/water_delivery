@@ -47,10 +47,8 @@ try {
         // Count all deliveries done AFTER this van log was initialized
         // This covers both 'Pending' and 'Out' states.
         $delQuery = $pdo->prepare("
-            SELECT COALESCE(SUM(oi.quantity), 0) 
+            SELECT COALESCE(SUM(dd.quantity), 0) 
             FROM daily_deliveries dd
-            JOIN orders o ON dd.subscription_id = o.id
-            JOIN order_items oi ON o.id = oi.order_id
             WHERE dd.delivery_boy_id = ? 
             AND dd.status = 'Delivered' 
             AND dd.delivered_at >= ?

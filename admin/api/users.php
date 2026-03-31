@@ -58,7 +58,38 @@ function fetchUsers($pdo) {
     $totalStmt->execute($params);
     $total = $totalStmt->fetchColumn();
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE $whereSQL ORDER BY created_at DESC LIMIT $limit OFFSET $offset");
+    $stmt = $pdo->prepare("
+        SELECT u.*, 
+        (
+            SELECT COALESCE(SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)), 0)
+            FROM daily_deliveries dd
+            JOIN orders o ON dd.subscription_id = o.id
+            WHERE o.user_id = u.id AND dd.status = 'Delivered'
+        ) as total_delivered,
+        (
+            SELECT COALESCE(SUM(amount), 0)
+            FROM customer_payments
+            WHERE user_id = u.id AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')
+        ) as total_paid,
+        (
+            /* Calculated Pending */
+            (
+                SELECT COALESCE(SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)), 0)
+                FROM daily_deliveries dd
+                JOIN orders o ON dd.subscription_id = o.id
+                WHERE o.user_id = u.id AND dd.status = 'Delivered'
+            ) - 
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM customer_payments
+                WHERE user_id = u.id AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')
+            )
+        ) as pending_bill
+        FROM users u 
+        WHERE $whereSQL 
+        ORDER BY created_at DESC 
+        LIMIT $limit OFFSET $offset
+    ");
     $stmt->execute($params);
     $users = $stmt->fetchAll();
 

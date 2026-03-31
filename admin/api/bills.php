@@ -52,7 +52,7 @@ if ($action === 'fetch_bills') {
                 
                 /* Calculate Total Bill based on Delivered Cans */
                 (
-                    SELECT COALESCE(SUM(oi2.quantity * p2.price), 0)
+                    SELECT COALESCE(SUM(dd2.quantity * p2.price), 0)
                     FROM daily_deliveries dd2
                     JOIN orders o2 ON dd2.subscription_id = o2.id
                     JOIN order_items oi2 ON o2.id = oi2.order_id
@@ -99,10 +99,10 @@ if ($action === 'fetch_details') {
                 dd.status,
                 dd.can_received,
                 dd.delivered_at,
-                oi.quantity,
+                dd.quantity,
                 p.product_name,
                 p.price,
-                (oi.quantity * p.price) as cost
+                (dd.quantity * p.price) as cost
             FROM daily_deliveries dd
             JOIN orders o ON dd.subscription_id = o.id
             JOIN order_items oi ON o.id = oi.order_id

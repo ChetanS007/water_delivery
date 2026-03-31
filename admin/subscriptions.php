@@ -40,13 +40,14 @@
                     <tr>
                         <th class="ps-4">Sr. No.</th>
                         <th>Customer</th>
+                        <th>Address</th>
                         <th>Plan & Product</th>
                         <th>Actions</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="subsTableBody">
-                    <tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
+                    <tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
                 </tbody>
             </table>
         </div>
@@ -81,7 +82,58 @@
         </div>
     </div>
 </div>
+<!-- Location Map Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Customer Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="customerMap" style="height: 400px; width: 100%;"></div>
+                <div class="p-3 bg-light">
+                    <p class="mb-0 text-dark small"><i class="fa-solid fa-location-dot me-2 text-primary"></i> <span id="mapAddressText"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let custMap = null;
+let custMarker = null;
+
+function showLocation(lat, lng, address) {
+    if (!lat || !lng) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Location Not Set',
+            text: 'This customer has not set their location on the map.'
+        });
+        return;
+    }
+    document.getElementById('mapAddressText').innerText = address;
+    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
+    modal.show();
+
+    setTimeout(() => {
+        if (!custMap) {
+            custMap = L.map('customerMap').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(custMap);
+            custMarker = L.marker([lat, lng]).addTo(custMap);
+        } else {
+            custMap.setView([lat, lng], 15);
+            custMarker.setLatLng([lat, lng]);
+            custMap.invalidateSize();
+        }
+    }, 500);
+}
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     loadSubscriptions();
@@ -100,7 +152,7 @@ function loadSubscriptions(page = 1, isPoll = false) {
     
     // Only show spinner on manual load
     if (!isPoll) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
         lastSubData = null;
     }
 
@@ -116,7 +168,7 @@ function loadSubscriptions(page = 1, isPoll = false) {
             lastSubData = currentDataStr;
 
             if(res.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No requests found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No requests found.</td></tr>';
                 document.getElementById('pagination').innerHTML = '';
                 return;
             }
@@ -146,8 +198,15 @@ function loadSubscriptions(page = 1, isPoll = false) {
                         <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="d-flex flex-column">
-                                <span class="fw-medium">${sub.user_name}</span>
+                                <span class="fw-medium text-dark">${sub.user_name}</span>
                                 <small class="text-muted">${sub.mobile}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column" style="max-width: 200px;">
+                                <a href="javascript:void(0)" class="text-decoration-none text-primary small" onclick="showLocation(${sub.latitude}, ${sub.longitude}, '${sub.address.replace(/'/g, "\\'").replace(/\n/g, ' ')}')">
+                                    <i class="fa-solid fa-map-location-dot me-1"></i> ${sub.address}
+                                </a>
                             </div>
                         </td>
                         <td>

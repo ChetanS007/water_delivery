@@ -205,16 +205,40 @@ $deliveries = [];
             <div class="modal-body p-4 text-center">
                 <i class="fa-solid fa-bottle-water text-primary fs-1 mb-3"></i>
                 <h4 class="fw-bold mb-3">रिकामी कॅन प्राप्त झाली का?</h4>
-                <p class="text-muted mb-4">(Has the water can been received?)</p>
-                <div class="row g-3">
-                    <div class="col-6">
-                        <button type="button" class="btn btn-success w-100 py-2 fw-bold rounded-pill" onclick="confirmCanStatus(1)">
-                            <i class="fa-solid fa-check me-2"></i> हो (Yes)
+                <p class="text-muted mb-4">(Has the water can been returned?)</p>
+                
+                <div id="canReturnQuestion">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-success w-100 py-2 fw-bold rounded-pill" onclick="showCanCounter(1)">
+                                <i class="fa-solid fa-check me-2"></i> हो (Yes)
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-danger w-100 py-2 fw-bold rounded-pill" onclick="confirmCanStatus(0, 0)">
+                                <i class="fa-solid fa-times me-2"></i> नाही (No)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="canReturnCounter" class="d-none mt-4">
+                    <h6 class="fw-bold text-dark mb-3">किती कॅन परत मिळाल्या? (Return Count)</h6>
+                    <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
+                        <button class="btn btn-outline-primary rounded-circle" style="width: 45px; height: 45px;" onclick="updateReturnQty(-1)">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <h2 class="fw-bold mb-0 mx-3" id="returnCountDisplay">0</h2>
+                        <button class="btn btn-outline-primary rounded-circle" style="width: 45px; height: 45px;" onclick="updateReturnQty(1)">
+                            <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
-                    <div class="col-6">
-                        <button type="button" class="btn btn-danger w-100 py-2 fw-bold rounded-pill" onclick="confirmCanStatus(0)">
-                            <i class="fa-solid fa-times me-2"></i> नाही (No)
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-pill" onclick="submitCanReturn()">
+                            पुष्टी करा (Confirm)
+                        </button>
+                        <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none" onclick="resetCanModal()">
+                            मागे जा (Back)
                         </button>
                     </div>
                 </div>
@@ -282,6 +306,7 @@ $deliveries = [];
     let routingControl;
     let currentLat = null, currentLng = null;
     let sortedOrders = []; 
+    let returnQty = 0;
     let lastDeliveryData = null;
 
     // Navigation State
@@ -496,6 +521,15 @@ $deliveries = [];
                             
                             <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1"></i> ${item.address}</p>
                             
+                            <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded">
+                                <span class="small fw-bold">नगाची संख्या:</span>
+                                <div class="input-group input-group-sm" style="width: 100px;">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty(${item.assignment_id}, -1)">-</button>
+                                    <span class="form-control text-center fw-bold" id="qty_${item.assignment_id}">${item.quantity}</span>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty(${item.assignment_id}, 1)">+</button>
+                                </div>
+                            </div>
+                            
                             <div class="d-grid gap-2">
                                 <button class="btn btn-sm btn-outline-primary" 
                                         onclick="startNavigation(${item.latitude}, ${item.longitude}, '${item.full_name.replace(/'/g, "\\'")}')">
@@ -625,6 +659,14 @@ $deliveries = [];
         });
     }
 
+    function updateQty(assignmentId, delta) {
+        const span = document.getElementById('qty_' + assignmentId);
+        let current = parseInt(span.innerText);
+        current += delta;
+        if (current < 1) current = 1;
+        span.innerText = current;
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
         if (decodedText === currentTargetQR) {
              html5QrcodeScanner.clear();
@@ -649,19 +691,51 @@ $deliveries = [];
     }
 
     function showCanReceivedModal() {
+        resetCanModal();
         const modal = new bootstrap.Modal(document.getElementById('canReceivedModal'));
         modal.show();
     }
 
-    function confirmCanStatus(status) {
+    function showCanCounter(status) {
+        document.getElementById('can_received_input').value = status;
+        document.getElementById('canReturnQuestion').classList.add('d-none');
+        document.getElementById('canReturnCounter').classList.remove('d-none');
+    }
+
+    function updateReturnQty(delta) {
+        returnQty += delta;
+        if (returnQty < 0) returnQty = 0;
+        document.getElementById('returnCountDisplay').innerText = returnQty;
+    }
+
+    function resetCanModal() {
+        returnQty = 0;
+        document.getElementById('returnCountDisplay').innerText = "0";
+        document.getElementById('canReturnQuestion').classList.remove('d-none');
+        document.getElementById('canReturnCounter').classList.add('d-none');
+    }
+
+    function submitCanReturn() {
+        const status = document.getElementById('can_received_input').value;
+        confirmCanStatus(status, returnQty);
+    }
+
+    function confirmCanStatus(status, count = 0) {
         document.getElementById('can_received_input').value = status;
         
-        const fd = new FormData();
-        fd.append('assignment_id', document.getElementById('assignment_id').value);
-        fd.append('can_received', status);
+        const assignmentId = document.getElementById('assignment_id').value;
+        const qty = document.getElementById('qty_' + assignmentId).innerText;
 
-        // Hide Modal
-        bootstrap.Modal.getInstance(document.getElementById('canReceivedModal')).hide();
+        const fd = new FormData();
+        fd.append('assignment_id', assignmentId);
+        fd.append('can_received', status);
+        fd.append('return_can_count', count);
+        fd.append('quantity', qty);
+
+        // Hide Modal if open
+        const modalEl = document.getElementById('canReceivedModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if(modal) modal.hide();
 
         fetch('complete_delivery.php', {
             method: 'POST',

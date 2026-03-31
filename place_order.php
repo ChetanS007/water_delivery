@@ -64,6 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             $pdo->commit();
             
+            $_SESSION['is_subscribed'] = true; // User is now subscribed
+            
             $status = "success";
             $message = "Your subscription request has been sent to the admin.";
             $redirect = "profile.php";

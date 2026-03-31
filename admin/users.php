@@ -50,6 +50,7 @@
                         <th>Contacts</th>
                         <th>Type</th>
                         <th>Status</th>
+                        <th>Pending Bill</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
@@ -403,6 +404,7 @@ function loadUsers(page = 1, isPoll = false) {
                         </td>
                         <td><span class="badge border text-dark">${user.customer_type}</span></td>
                         <td>${statusBadge}</td>
+                        <td class="fw-bold text-danger">₹${parseFloat(user.pending_bill || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         <td class="text-end pe-4">
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-white border" onclick="viewUser(${user.id})" title="View & QR"><i class="fa-solid fa-qrcode text-dark"></i></button>

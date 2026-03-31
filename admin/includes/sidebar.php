@@ -64,9 +64,10 @@ $role = $_SESSION['role'] ?? 'Admin';
                 <i class="fa-solid fa-file-invoice-dollar"></i> Bill
             </a>
         </li> -->
-        
+         
+
         <li class="sidebar-item">
-            <a href="bill&payments.php" class="sidebar-link <?php echo $current_page == 'bill_payments.php' ? 'active' : ''; ?>">
+            <a href="bill&payments.php" class="sidebar-link <?php echo ($current_page == 'bill&payments.php' || $current_page == 'bill_payments.php') ? 'active' : ''; ?>">
                 <i class="fa-solid fa-file-invoice"></i> Bill & Payments
             </a>
         </li>

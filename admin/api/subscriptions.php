@@ -38,7 +38,7 @@ function fetchSubscriptions($pdo) {
     }
 
     // Join with Users and Products
-    $sql = "SELECT o.*, u.full_name as user_name, u.mobile, u.latitude, u.longitude, p.product_name, db.full_name as delivery_boy_name
+    $sql = "SELECT o.*, u.full_name as user_name, u.mobile, u.address, u.latitude, u.longitude, p.product_name, db.full_name as delivery_boy_name
             FROM orders o
             JOIN users u ON o.user_id = u.id
             JOIN order_items oi ON o.id = oi.order_id

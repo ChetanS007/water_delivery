@@ -52,6 +52,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $update = $pdo->prepare("UPDATE users SET qr_code = ? WHERE id = ?");
             $update->execute([$qr_code, $user_id]);
 
+            // Auto Login to session
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['role'] = 'Customer';
+            $_SESSION['name'] = $full_name;
+            $_SESSION['qr_code'] = $qr_code;
+            $_SESSION['is_subscribed'] = false; // Initial state for new user
+
             echo "
             <!DOCTYPE html>
             <html>
@@ -66,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     Swal.fire({
                         icon: 'success',
                         title: 'यशस्वी!',
-                        text: 'नोंदणी यशस्वी झाली! कृपया लॉगिन करा.',
+                        text: 'नोंदणी यशस्वी झाली! तुम्ही आता लॉग इन झाला आहात.',
                         confirmButtonText: 'ठीक आहे'
                     }).then(() => { window.location.href='index.php'; });
                 });
@@ -152,6 +159,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['role'] = 'Customer';
                 $_SESSION['name'] = $user['full_name'];
                 $_SESSION['qr_code'] = $user['qr_code'];
+
+                // Check Subscription Status
+                $sub_stmt = $pdo->prepare("SELECT id FROM orders WHERE user_id = ? AND status IN ('Pending', 'Approved', 'Assigned')");
+                $sub_stmt->execute([$user['id']]);
+                $_SESSION['is_subscribed'] = ($sub_stmt->rowCount() > 0);
+
                 header("Location: index.php");
                 exit();
             }

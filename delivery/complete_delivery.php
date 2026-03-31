@@ -8,9 +8,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Delivery') {
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $assignment_id = $_POST['assignment_id'] ?? 0;
     $can_received = $_POST['can_received'] ?? 0;
+    $delivered_qty = $_POST['quantity'] ?? 0;
+    $return_can_count = $_POST['return_can_count'] ?? 0;
 
     if (!$assignment_id) {
         echo json_encode(['success' => false, 'message' => 'Missing assignment ID']);
@@ -34,6 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $order_id = $assignment['order_id'];
         $boy_id = $_SESSION['user_id'];
         $today = date('Y-m-d');
+
+        // If quantity is not provided, fetch default from order_items
+        if ($delivered_qty <= 0) {
+            $qi = $pdo->prepare("SELECT quantity FROM order_items WHERE order_id = ?");
+            $qi->execute([$order_id]);
+            $delivered_qty = $qi->fetchColumn() ?: 1;
+        }
         
         // Check if already delivered today
         $check = $pdo->prepare("SELECT id FROM daily_deliveries WHERE subscription_id = ? AND delivery_date = ?");
@@ -45,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Insert Record
-        $stmt = $pdo->prepare("INSERT INTO daily_deliveries (subscription_id, delivery_boy_id, delivery_date, status, can_received, delivered_at) VALUES (?, ?, ?, 'Delivered', ?, NOW())");
-        $stmt->execute([$order_id, $boy_id, $today, $can_received]);
+        $stmt = $pdo->prepare("INSERT INTO daily_deliveries (subscription_id, delivery_boy_id, quantity, delivery_date, status, can_received, return_can_count, delivered_at) VALUES (?, ?, ?, ?, 'Delivered', ?, ?, NOW())");
+        $stmt->execute([$order_id, $boy_id, $delivered_qty, $today, $can_received, $return_can_count]);
 
         $pdo->commit();
         echo json_encode(['success' => true, 'message' => 'Delivery Completed for Today!']);

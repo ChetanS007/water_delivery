@@ -16,11 +16,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bill_status') {
     try {
         // Total Amount
         $stmt = $pdo->prepare("
-            SELECT COALESCE(SUM(oi.quantity * p.price), 0)
+            SELECT COALESCE(SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)), 0)
             FROM daily_deliveries dd
             JOIN orders o ON dd.subscription_id = o.id
-            JOIN order_items oi ON o.id = oi.order_id
-            JOIN products p ON oi.product_id = p.id
             WHERE o.user_id = ? AND dd.status = 'Delivered'
         ");
         $stmt->execute([$user_id]);
@@ -35,14 +33,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bill_status') {
         $stmt = $pdo->prepare("
             SELECT 
                 DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
-                SUM(oi.quantity * p.price) as monthly_total,
+                SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)) as monthly_total,
                 (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')) as monthly_paid,
                 (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status,
                 (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status = 'Pending') as monthly_pending_upload
             FROM daily_deliveries dd
             JOIN orders o ON dd.subscription_id = o.id
-            JOIN order_items oi ON o.id = oi.order_id
-            JOIN products p ON oi.product_id = p.id
             WHERE o.user_id = ? AND dd.status = 'Delivered'
             GROUP BY month_key
             ORDER BY month_key DESC
@@ -74,7 +70,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_month_details') {
             SELECT 
                 dd.delivery_date,
                 dd.status,
-                dd.can_received
+                dd.can_received,
+                dd.quantity
             FROM daily_deliveries dd
             JOIN orders o ON dd.subscription_id = o.id
             WHERE o.user_id = ? AND DATE_FORMAT(dd.delivery_date, '%Y-%m') = ?
@@ -133,11 +130,9 @@ $paymentQR = $stmt->fetchColumn() ?: '';
 
 // Calculate Total Amount (from delivered daily deliveries)
 $stmt = $pdo->prepare("
-    SELECT COALESCE(SUM(oi.quantity * p.price), 0)
+    SELECT COALESCE(SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)), 0)
     FROM daily_deliveries dd
     JOIN orders o ON dd.subscription_id = o.id
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON oi.product_id = p.id
     WHERE o.user_id = ? AND dd.status = 'Delivered'
 ");
 $stmt->execute([$user_id]);
@@ -154,14 +149,12 @@ $pendingAmount = $totalAmount - $paidAmount;
 $stmt = $pdo->prepare("
     SELECT 
         DATE_FORMAT(dd.delivery_date, '%Y-%m') as month_key,
-        SUM(oi.quantity * p.price) as monthly_total,
+        SUM(dd.quantity * (SELECT price FROM order_items WHERE order_id = o.id LIMIT 1)) as monthly_total,
         (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status IN ('Approved', 'Remaining', 'Online Paid', 'Cash Paid')) as monthly_paid,
         (SELECT status FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') ORDER BY id DESC LIMIT 1) as last_payment_status,
         (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE user_id = ? AND payment_month = DATE_FORMAT(dd.delivery_date, '%Y-%m') AND status = 'Pending') as monthly_pending_upload
     FROM daily_deliveries dd
     JOIN orders o ON dd.subscription_id = o.id
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON oi.product_id = p.id
     WHERE o.user_id = ? AND dd.status = 'Delivered'
     GROUP BY month_key
     ORDER BY month_key DESC
@@ -386,8 +379,8 @@ include 'includes/header.php';
                         <thead class="bg-light shadow-sm">
                             <tr>
                                 <th class="ps-4">तारीख (Date)</th>
-                                <th class="text-center">Water Can Delivered</th>
-                                <th class="text-center">Can Received</th>
+                                <th class="text-center">तपशील (Delivered)</th>
+                                <th class="text-center">कॅन मिळाले (Received)</th>
                             </tr>
                         </thead>
                         <tbody id="monthDetailsBody">
@@ -623,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             detailsBody.innerHTML += `
                                 <tr>
                                     <td class="ps-4 fw-medium">${new Date(row.delivery_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                    <td class="text-center">${deliveredIcon}</td>
+                                    <td class="text-center">${row.quantity} नग ${deliveredIcon}</td>
                                     <td class="text-center">${receivedIcon}</td>
                                 </tr>
                             `;

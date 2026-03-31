@@ -26,10 +26,55 @@ switch ($action) {
     case 'get_months':
         fetchMonths($pdo);
         break;
+    case 'fetch_delivery_details':
+        fetchDeliveryDetails($pdo);
+        break;
+    case 'fetch_counter_payments':
+        fetchCounterPayments($pdo);
+        break;
+    case 'create_counter_payment':
+        createCounterPayment($pdo);
+        break;
+    case 'fetch_all_users':
+        fetchAllUsers($pdo);
+        break;
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
 }
+
+function fetchDeliveryDetails($pdo) {
+    if (!isset($_GET['user_id']) || !isset($_GET['month'])) {
+        echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+        return;
+    }
+
+    $userId = intval($_GET['user_id']);
+    $month = $_GET['month'];
+
+    try {
+        $sql = "
+            SELECT 
+                dd.delivery_date,
+                dd.quantity,
+                dd.can_received,
+                dd.return_can_count,
+                dd.status
+            FROM daily_deliveries dd
+            JOIN orders o ON dd.subscription_id = o.id
+            WHERE o.user_id = ? AND DATE_FORMAT(dd.delivery_date, '%Y-%m') = ?
+            ORDER BY dd.delivery_date DESC
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$userId, $month]);
+        $details = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['success' => true, 'data' => $details]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
 
 function fetchBillPayments($pdo) {
     $sql = "
@@ -45,7 +90,7 @@ function fetchBillPayments($pdo) {
             
             /* Total Bill for the specific month (or all if month null) */
             (
-                SELECT COALESCE(SUM(oi2.quantity * p2.price), 0)
+                SELECT COALESCE(SUM(dd2.quantity * p2.price), 0)
                 FROM daily_deliveries dd2
                 JOIN orders o2 ON dd2.subscription_id = o2.id
                 JOIN order_items oi2 ON o2.id = oi2.order_id
@@ -75,7 +120,7 @@ function fetchBillPayments($pdo) {
 
             /* Calculate Total Bill based on Delivered Cans for the specific month */
             (
-                SELECT COALESCE(SUM(oi2.quantity * p2.price), 0)
+                SELECT COALESCE(SUM(dd2.quantity * p2.price), 0)
                 FROM daily_deliveries dd2
                 JOIN orders o2 ON dd2.subscription_id = o2.id
                 JOIN order_items oi2 ON o2.id = oi2.order_id
@@ -102,19 +147,29 @@ function fetchBillPayments($pdo) {
 
         FROM customer_payments cp
         JOIN users u ON cp.user_id = u.id
+        WHERE cp.is_counter = 0
     ";
 
     $month = $_GET['month'] ?? '';
+    $userId = $_GET['user_id'] ?? '';
+    $whereClauses = [];
+    $params = [];
+
     if ($month) {
-        $sql .= " WHERE cp.payment_month = :month ";
+        $sql .= " AND cp.payment_month = :month";
+        $params[':month'] = $month;
     }
-    
+    if ($userId) {
+        $sql .= " AND cp.user_id = :user_id";
+        $params[':user_id'] = $userId;
+    }
+
     $sql .= " ORDER BY cp.created_at DESC";
 
     try {
         $stmt = $pdo->prepare($sql);
-        if ($month) {
-            $stmt->bindParam(':month', $month);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
         $stmt->execute();
         $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -122,6 +177,73 @@ function fetchBillPayments($pdo) {
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
+}
+
+function fetchCounterPayments($pdo) {
+    try {
+        $month = $_GET['month'] ?? '';
+        $where = "is_counter = 1";
+        $params = [];
+        if ($month) {
+            $where .= " AND payment_month = ?";
+            $params[] = $month;
+        }
+
+        $sql = "SELECT cp.*, u.full_name as user_name 
+                FROM customer_payments cp 
+                JOIN users u ON cp.user_id = u.id 
+                WHERE $where 
+                ORDER BY cp.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calculate Total
+        $totalSql = "SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE $where";
+        $totalStmt = $pdo->prepare($totalSql);
+        $totalStmt->execute($params);
+        $totalAmount = $totalStmt->fetchColumn();
+
+        echo json_encode(['success' => true, 'data' => $data, 'total_amount' => $totalAmount]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
+function createCounterPayment($pdo) {
+    try {
+        $userId = $_POST['user_id'] ?? 0;
+        $amount = $_POST['amount'] ?? 0;
+        $paymentType = $_POST['payment_type'] ?? 'Cash';
+        $month = $_POST['payment_month'] ?? date('Y-m');
+
+        if (!$userId || !$amount) {
+            echo json_encode(['success' => false, 'message' => 'User and Amount are required']);
+            return;
+        }
+
+        $pdo->beginTransaction();
+
+        $status = ($paymentType === 'Online') ? 'Online Paid' : 'Cash Paid';
+        $stmt = $pdo->prepare("INSERT INTO customer_payments (user_id, amount, payment_month, status, is_counter, payment_type) VALUES (?, ?, ?, ?, 1, ?)");
+        $stmt->execute([$userId, $amount, $month, $status, $paymentType]);
+        $paymentId = $pdo->lastInsertId();
+
+        // Also record in history
+        $stmtHistory = $pdo->prepare("INSERT INTO payment_history (payment_id, amount, payment_type) VALUES (?, ?, ?)");
+        $stmtHistory->execute([$paymentId, $amount, $paymentType]);
+
+        $pdo->commit();
+        echo json_encode(['success' => true, 'message' => 'Payment added successfully']);
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
+function fetchAllUsers($pdo) {
+    $stmt = $pdo->query("SELECT id, full_name, mobile FROM users ORDER BY full_name ASC");
+    echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
 }
 
 function approvePayment($pdo) {
@@ -207,6 +329,12 @@ function fetchMonths($pdo) {
     try {
         $stmt = $pdo->query("SELECT DISTINCT payment_month FROM customer_payments WHERE payment_month IS NOT NULL ORDER BY payment_month DESC");
         $months = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $currentMonth = date('Y-m');
+        if (!in_array($currentMonth, $months)) {
+            array_unshift($months, $currentMonth);
+        }
+        
         echo json_encode(['success' => true, 'data' => $months]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
