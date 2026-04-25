@@ -638,12 +638,35 @@ h6 {
     color: var(--white);
 }
 
-/* Modals */
 .modal-content {
     border-radius: var(--border-radius-lg);
     border: none;
+    overflow: hidden; /* Ensure background colors don't bleed through corners */
+}
+
+/* Modal Title Color Fix */
+.modal-header .modal-title,
+.modal-header h4, 
+.modal-header h5 {
+    color: #ffffff !important;
+}
+
+/* Ensure close button is visible on dark headers */
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
 }
 
 .glass-card {
     background: #fff !important;
+}
+
+/* Mobile Quantity Selector Row Fix */
+@media (max-width: 575px) {
+    .qty-input-group {
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+    }
+    .qty-input-group .form-control {
+        min-width: 50px !important;
+    }
 }

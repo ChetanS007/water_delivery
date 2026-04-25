@@ -28,6 +28,12 @@ $role = $_SESSION['role'] ?? 'Admin';
         </li> 
 
         <li class="sidebar-item">
+            <a href="events.php" class="sidebar-link <?php echo $current_page == 'events.php' ? 'active' : ''; ?>">
+                <i class="fa-solid fa-calendar-check"></i> Events
+            </a>
+        </li>
+
+        <li class="sidebar-item">
             <a href="delivery_boys.php" class="sidebar-link <?php echo $current_page == 'delivery_boys.php' ? 'active' : ''; ?>">
                 <i class="fa-solid fa-motorcycle"></i> Delivery Boys
             </a>

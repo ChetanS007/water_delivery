@@ -25,6 +25,7 @@ try {
                 <div class="d-flex gap-3">
                     <!-- <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">आजच ऑर्डर करा</button> -->
                     <button class="btn btn-secondary shadow-lg icon-link-hover" onclick="window.location.href='#products'">बाटली खरेदी करा</button>
+                    <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#eventBookingModal">कार्यक्रमासाठी बुक करा</button>
                 </div> 
             </div>
                       
@@ -282,6 +283,7 @@ try {
 
                 <div class="d-flex gap-3 mt-4">
                     <button class="btn btn-primary shadow icon-link-hover" onclick="window.location.href='#products'">आत्ताच ऑर्डर करा</button>
+                    <button class="btn btn-warning shadow icon-link-hover" data-bs-toggle="modal" data-bs-target="#eventBookingModal">कार्यक्रमासाठी बुक करा</button>
                     <!-- <button class="btn btn-secondary shadow icon-link-hover">विनामूल्य अंदाज</button> -->
                 </div>
             </div>
@@ -473,9 +475,9 @@ try {
                     </div>
 
                     <div class="row align-items-center mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-md-6">
                             <label class="form-label small fw-bold text-muted text-uppercase">प्रमाण (Quantity)</label>
-                            <div class="input-group">
+                            <div class="input-group qty-input-group flex-nowrap">
                                 <button class="btn btn-outline-secondary rounded-start-pill" type="button" onclick="document.getElementById('orderQty').stepDown(); updateSummary();">-</button>
                                 <input type="number" name="quantity" id="orderQty" class="form-control text-center border-secondary" value="1" min="1" onchange="updateSummary()">
                                 <button class="btn btn-outline-secondary rounded-end-pill" type="button" onclick="document.getElementById('orderQty').stepUp(); updateSummary();">+</button>
@@ -751,6 +753,90 @@ try {
             div.classList.add('d-none');
         }
     }
+</script>
+<!-- Event Booking Modal -->
+<div class="modal fade" id="eventBookingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg p-0" style="overflow: hidden; border-radius: 20px;">
+            <div class="modal-header border-0 bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold">कार्यक्रमासाठी बुकिंग करा</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-white">
+                <form id="eventBookingForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">नाव</label>
+                        <input type="text" name="name" class="form-control rounded-pill bg-light border-0 px-3" placeholder="तुमचे नाव प्रविष्ट करा" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">मोबाईल नंबर</label>
+                        <input type="tel" name="mobile" class="form-control rounded-pill bg-light border-0 px-3" placeholder="मोबाईल नंबर प्रविष्ट करा" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">कार्यक्रमाची तारीख</label>
+                        <input type="date" name="event_date" class="form-control rounded-pill bg-light border-0 px-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">ऑर्डर तपशील</label>
+                        <textarea name="order_details" class="form-control rounded-4 bg-light border-0 px-3" rows="3" placeholder="उदा. १० बाटल्या, ५ गॅलन इ."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow text-white text-uppercase letter-spacing-1 mt-3">विनंती पाठवा</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Event Booking Form Submission
+    document.getElementById('eventBookingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>प्रक्रिया सुरू आहे...';
+
+        fetch('api/book_event.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('eventBookingModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'यशस्वी!',
+                    text: 'आमची टीम तुम्हाला लवकरच संपर्क करेल.',
+                    confirmButtonText: 'ठिक आहे',
+                    confirmButtonColor: '#0d6efd'
+                });
+                this.reset();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'चूक!',
+                    text: data.message || 'काहीतरी चूक झाली. कृपया पुन्हा प्रयत्न करा.',
+                    confirmButtonText: 'ठिक आहे'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'चूक!',
+                text: 'सर्व्हरशी संपर्क होऊ शकला नाही.',
+                confirmButtonText: 'ठिक आहे'
+            });
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'विनंती पाठवा';
+        });
+    });
 </script>
 </body>
 </html>
