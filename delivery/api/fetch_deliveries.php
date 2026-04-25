@@ -8,23 +8,35 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Delivery') {
 }
 
 $boy_id = $_SESSION['user_id'];
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Consolidate the Logic from dashboard.php
 try {
-    // Get ALL active assignments for this delivery boy
+    // Get assignments/orders
+    // If searching, we look at ALL approved orders across the system
+    // If not searching, we only look at orders assigned to this boy
     $sql = "SELECT da.id as assignment_id, o.id as order_id, o.order_type, o.custom_days, o.created_at, 
                    u.full_name, u.address, u.latitude, u.longitude, u.qr_code, o.total_amount,
-                   p.product_name, oi.quantity
-            FROM delivery_assignments da
-            JOIN orders o ON da.order_id = o.id
+                   p.product_name, oi.quantity, da.delivery_boy_id as assigned_boy_id
+            FROM orders o
             JOIN users u ON o.user_id = u.id
             JOIN order_items oi ON o.id = oi.order_id
             JOIN products p ON oi.product_id = p.id
-            WHERE da.delivery_boy_id = ? AND o.status IN ('Approved', 'Assigned')
-            ORDER BY da.assigned_at DESC";
+            LEFT JOIN delivery_assignments da ON o.id = da.order_id
+            WHERE o.status IN ('Approved', 'Assigned')";
+
+    if ($search) {
+        $sql .= " AND (u.full_name LIKE :search1 OR u.mobile LIKE :search2)";
+        $params = [':search1' => "%$search%", ':search2' => "%$search%"];
+    } else {
+        $sql .= " AND da.delivery_boy_id = :boy_id";
+        $params = [':boy_id' => $boy_id];
+    }
+
+    $sql .= " ORDER BY o.created_at DESC";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$boy_id]);
+    $stmt->execute($params);
     $all_assignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     date_default_timezone_set('Asia/Kolkata'); // Ensure correct timezone
@@ -88,15 +100,22 @@ try {
             $isDue = true; 
         }
 
-        if ($isDue) {
+        if ($isDue || $search !== '') {
             // Check if already delivered TODAY
             $check = $pdo->prepare("SELECT id, status FROM daily_deliveries WHERE subscription_id = ? AND delivery_date = ?");
             $check->execute([$item['order_id'], $todayStr]);
             $result = $check->fetch(PDO::FETCH_ASSOC);
             
-            // Only add pending deliveries to the list
-            if (!$result || $result['status'] !== 'Delivered') {
+            // If searching, show all matches but mark status
+            // If not searching, only show pending deliveries
+            if ($search !== '') {
+                $item['today_status'] = $result ? $result['status'] : 'Pending';
                 $deliveries[] = $item;
+            } else {
+                if (!$result || $result['status'] !== 'Delivered') {
+                    $item['today_status'] = 'Pending';
+                    $deliveries[] = $item;
+                }
             }
         }
     }

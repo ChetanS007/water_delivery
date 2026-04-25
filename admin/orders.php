@@ -120,34 +120,42 @@ let lastVanData = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadData('fetch_todays_deliveries');
     
+    // Search Listener
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const q = this.value.trim();
+        if(q.length > 0) {
+            loadData('search_all_customers', false, q);
+        } else {
+            loadData('fetch_todays_deliveries');
+        }
+    });
+
     // Poll for updates every 5 seconds
     setInterval(() => {
         if(document.getElementById('orders-pane').classList.contains('active')) {
-             if(document.activeElement.id !== 'searchInput') loadData('fetch_todays_deliveries', true);
+             const searchVal = document.getElementById('searchInput').value.trim();
+             if(document.activeElement.id !== 'searchInput' && searchVal === '') {
+                 loadData('fetch_todays_deliveries', true);
+             }
         } else if(document.getElementById('van-pane').classList.contains('active')) {
              loadVanData(true);
         }
     }, 5000);
 });
 
-// --- Van Management Functions ---
+// --- Order Management Functions ---
 
-function loadDeliveryBoys() {
-    // Existing helper if needed, but not used in this scope anymore
-}
-
-function loadData(action, isPoll = false) {
+function loadData(action, isPoll = false, search = '') {
     currentAction = action;
     const tbody = document.getElementById('tableBody');
     const thead = document.getElementById('tableHead');
     
-    // Only show spinner on first load, not on polling
     if (!isPoll) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
-        lastData = null; // Reset cache on explicit reload/tab switch
+        lastData = null; 
     }
 
-    // Set Header (Static, no need to update on poll usually, but safe to leave)
+    // Set Header
     thead.innerHTML = `
         <tr>
             <th class="ps-4">Sr. No.</th>
@@ -156,19 +164,16 @@ function loadData(action, isPoll = false) {
             <th>Assigned To</th>
             <th>Status</th>
             <th>Delivery Date</th>
-            <th>Delivery Time</th>
+            <th>Action</th>
         </tr>
     `;
 
-    fetch(`api/orders.php?action=${action}`)
+    fetch(`api/orders.php?action=${action}&search=${encodeURIComponent(search)}`)
     .then(r => r.json())
     .then(res => {
         if(res.success) {
-            // Compare with last data to prevent flickering
             const currentDataStr = JSON.stringify(res.data);
-            if (lastData === currentDataStr) {
-                return; // No changes, do nothing (Silent Update)
-            }
+            if (lastData === currentDataStr) return;
             lastData = currentDataStr;
 
             if(res.data.length === 0) {
@@ -179,47 +184,79 @@ function loadData(action, isPoll = false) {
             let html = '';
             res.data.forEach((item, index) => {
                 let srNo = index + 1;
-                // Today's Dispatch Row
                 const statusClass = item.today_status === 'Delivered' ? 'success' : (item.today_status === 'Missed' ? 'danger' : 'warning');
                 
-                let boyDisplay = '<span class="text-danger">Unassigned</span>';
+                let boyDisplay = '<span class="text-danger small">Unassigned</span>';
                 if (item.delivery_boy_name) {
-                    boyDisplay = `<span class="fw-bold text-dark">${item.delivery_boy_name}</span>`;
+                    boyDisplay = `<span class="fw-bold text-dark small">${item.delivery_boy_name}</span>`;
                 }
 
-                // Date/Time logic
                 let dateStr = '-';
-                let timeStr = '-';
-                
                 if (item.today_status === 'Delivered' && item.delivered_at) {
-                    const dateObj = new Date(item.delivered_at);
-                    dateStr = dateObj.toLocaleDateString();
-                    timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    dateStr = new Date(item.delivered_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                 }
                 
+                let actionBtn = '';
+                if (item.today_status !== 'Delivered') {
+                    actionBtn = `<button class="btn btn-sm btn-success py-1 px-2" onclick="markAsDelivered(${item.sub_id})"><i class="fa-solid fa-check me-1"></i> Delivered</button>`;
+                } else {
+                    actionBtn = `<span class="badge bg-light text-success border"><i class="fa-solid fa-circle-check me-1"></i> Done</span>`;
+                }
+
                 html += `
                     <tr>
                         <td class="ps-4 fw-bold text-muted">${srNo}</td>
                         <td>
                             <div class="d-flex flex-column">
                                 <span class="fw-medium">${item.customer_name}</span>
-                                <small class="text-muted">${item.mobile}</small>
+                                <small class="text-muted" style="font-size: 0.75rem;">${item.mobile}</small>
                             </div>
                         </td>
                         <td>
-                            <span class="badge bg-light text-dark border me-1">${item.order_type}</span>
-                            <small>${item.custom_days ? JSON.parse(item.custom_days).join(', ') : ''}</small>
+                            <span class="badge bg-light text-dark border me-1" style="font-size: 0.7rem;">${item.order_type}</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">${item.custom_days ? JSON.parse(item.custom_days).join(', ') : ''}</small>
                         </td>
                         <td>${boyDisplay}</td>
-                        <td><span class="badge bg-${statusClass}">${item.today_status}</span></td>
-                        <td>${dateStr}</td>
-                        <td>${timeStr}</td>
+                        <td><span class="badge bg-${statusClass}" style="font-size: 0.7rem;">${item.today_status}</span></td>
+                        <td><small>${dateStr}</small></td>
+                        <td>${actionBtn}</td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
         } else {
             tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">${res.message}</td></tr>`;
+        }
+    });
+}
+
+function markAsDelivered(subId) {
+    Swal.fire({
+        title: 'Mark as Delivered?',
+        text: "Confirm delivery for this customer today.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Delivered'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('action', 'mark_delivered');
+            fd.append('sub_id', subId);
+            fetch('api/orders.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    let searchVal = document.getElementById('searchInput').value.trim();
+                    if(searchVal) {
+                        loadData('search_all_customers', false, searchVal);
+                    } else {
+                        loadData('fetch_todays_deliveries');
+                    }
+                    Swal.fire({ icon: 'success', title: 'Success', text: res.message, timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            });
         }
     });
 }

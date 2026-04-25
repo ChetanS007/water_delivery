@@ -107,6 +107,9 @@ $deliveries = [];
         <li class="nav-item">
             <button class="nav-link" id="van-tab" data-bs-toggle="tab" data-bs-target="#vanView" type="button" onclick="loadVanData()">व्हॅन तपशील</button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customerView" type="button" onclick="loadCustomers()">ग्राहक</button>
+        </li>
     </ul>
 
      
@@ -119,6 +122,15 @@ $deliveries = [];
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0">आजची डिलिव्हरी यादी (<span id="countDisplay"><?php echo count($deliveries); ?></span>)</h5>
                 <small class="text-muted" id="locStatus">स्थान मिळवत आहे...</small>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" id="deliverySearchInput" class="form-control border-start-0 ps-0" placeholder="ग्राहक शोधा (Search customer)...">
+                    </div>
+                </div>
             </div>
 
             <div class="row g-3" id="deliveryList">
@@ -175,6 +187,50 @@ $deliveries = [];
             </div>
         </div>
 
+        <!-- Customer Management View -->
+        <div class="tab-pane fade" id="customerView">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">ग्राहक यादी</h5>
+                <button class="btn btn-primary btn-sm shadow-sm" onclick="openAddCustomerModal()">
+                    <i class="fa-solid fa-plus me-1"></i> नवीन ग्राहक जोडा
+                </button>
+            </div>
+            
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" id="custSearchInput" class="form-control border-start-0 ps-0" placeholder="नाव किंवा मोबाईल नंबरने शोधा...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">ग्राहक</th>
+                                    <th>मोबाईल</th>
+                                    <th>प्रकार</th>
+                                    <th class="text-end pe-3">कृती</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerTableBody">
+                                <tr><td colspan="4" class="text-center py-4 text-muted">लोड होत आहे...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 py-2">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0" id="custPagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -191,6 +247,7 @@ $deliveries = [];
                 <p class="text-muted mt-2">कॅमेरा ग्राहकाच्या QR कोडकडे धरा</p>
                 <form id="completeForm" action="complete_delivery.php" method="POST">
                     <input type="hidden" name="assignment_id" id="assignment_id">
+                    <input type="hidden" name="order_id" id="order_id_flow">
                     <input type="hidden" name="can_received" id="can_received_input" value="0">
                 </form>
             </div>
@@ -267,6 +324,138 @@ $deliveries = [];
     </div>
 </div>
 
+<!-- Add/Edit User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalTitle">नवीन ग्राहक जोडा</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="userForm">
+                    <input type="hidden" name="action" id="formAction" value="create">
+                    <input type="hidden" name="id" id="userId">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">पूर्ण नाव <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" id="fullName" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">ग्राहकाचा प्रकार</label>
+                            <select name="customer_type" id="customerType" class="form-select">
+                                <option value="Home">घर (Home)</option>
+                                <option value="Shop">दुकान (Shop)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">मोबाईल नंबर <span class="text-danger">*</span></label>
+                            <input type="text" name="mobile" id="mobile" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">ईमेल पत्ता</label>
+                            <input type="email" name="email" id="email" class="form-control">
+                        </div>
+                        
+                        <!-- Map Section -->
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">स्थान निवडा (Select Location)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="addressSearch" class="form-control" placeholder="परिसर किंवा ठिकाण शोधा...">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchCustomerLocation()">शोधा</button>
+                                <button type="button" class="btn btn-success" onclick="detectCustomerLocation()" title="Detect Current Location">
+                                    <i class="fa-solid fa-location-crosshairs"></i>
+                                </button>
+                            </div>
+                            <div id="customerMap" style="height: 250px; border-radius: 8px; border: 1px solid #ccc; z-index: 1;"></div>
+                            <small class="text-muted">नकाशावर क्लिक करा किंवा मार्कर फिरवून पत्ता मिळवा.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">पूर्ण पत्ता <span class="text-danger">*</span></label>
+                            <textarea name="address" id="address" class="form-control" rows="2" required></textarea>
+                            <small class="text-muted">नकाशावरून स्वयंचलित भरले जाईल. आवश्यक असल्यास बदला.</small>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">शहर</label>
+                            <input type="text" name="city" id="city" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">राज्य</label>
+                            <input type="text" name="state" id="state" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">पिनकोड</label>
+                            <input type="text" name="pincode" id="pincode" class="form-control">
+                        </div>
+                        
+                        <!-- Hidden Lat/Long -->
+                        <input type="hidden" name="latitude" id="latitude">
+                        <input type="hidden" name="longitude" id="longitude">
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">स्थिती (Status)</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="1">सक्रिय (Active)</option>
+                                <option value="0">निष्क्रिय (Inactive)</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">रद्द करा</button>
+                <button type="button" class="btn btn-primary" onclick="submitUserForm()">ग्राहक जतन करा</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View / QR Modal -->
+<div class="modal fade" id="viewUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-body p-0">
+                <div class="bg-primary text-white p-4 text-center rounded-top position-relative">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+                    <div class="avatar-circle mx-auto mb-3 bg-white text-primary display-4 fw-bold shadow" style="width: 80px; height: 80px; line-height: 80px; border-radius: 50%;">
+                        <span id="viewAvatar">U</span>
+                    </div>
+                    <h5 class="fw-bold mb-0" id="viewName">User Name</h5>
+                    <p class="opacity-75 small mb-0" id="viewMobile">Mobile</p>
+                </div>
+                <div class="p-4">
+                    <div class="text-center mb-4">
+                        <label class="small text-muted text-uppercase fw-bold mb-2">ग्राहक QR कोड</label>
+                        <div id="qrcode" class="d-flex justify-content-center p-3 bg-light rounded mx-auto border" style="width: fit-content; border: 1px solid #ddd;"></div>
+                        <div class="mt-3 d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="downloadQR()"><i class="fa-solid fa-download me-1"></i> डाउनलोड</button>
+                            <button class="btn btn-sm btn-outline-dark" onclick="printQR()"><i class="fa-solid fa-print me-1"></i> प्रिंट</button>
+                        </div>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">ग्राहक आयडी</span>
+                            <span class="fw-bold" id="viewId">#0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">प्रकार</span>
+                            <span id="viewType">Home</span>
+                        </li>
+                        <li class="list-group-item px-0">
+                            <span class="text-muted d-block mb-1">पत्ता</span>
+                            <span class="fw-medium" id="viewAddress">-</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Add Van Modal -->
 <div class="modal fade" id="addVanModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -297,10 +486,12 @@ $deliveries = [];
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     let html5QrcodeScanner;
     let currentTargetQR = "";
     let currentAssignmentId = "";
+    let currentOrderId = "";
     let map;
     let currentMarker;
     let routingControl;
@@ -332,10 +523,19 @@ $deliveries = [];
         startTracking();
         fetchDeliveries(); // Initial Load
         
+        // Search Listener
+        document.getElementById('deliverySearchInput').addEventListener('input', function() {
+            fetchDeliveries(this.value.trim());
+        });
+
         // Polling (No Full Page Reload)
         setInterval(() => {
             if(!html5QrcodeScanner) { 
-                fetchDeliveries();
+                const searchVal = document.getElementById('deliverySearchInput').value.trim();
+                if (document.activeElement.id !== 'deliverySearchInput') {
+                    fetchDeliveries(searchVal);
+                }
+                
                 if(document.getElementById('vanView').classList.contains('active')) {
                     loadVanData(true);
                 }
@@ -417,10 +617,10 @@ $deliveries = [];
         .catch(err => console.error("Location update failed", err));
     }
 
-    function fetchDeliveries() {
+    function fetchDeliveries(search = '') {
         const container = document.getElementById('deliveryList');
         
-        fetch('api/fetch_deliveries.php')
+        fetch('api/fetch_deliveries.php?search=' + encodeURIComponent(search))
         .then(r => r.json())
         .then(res => {
             if(res.success) {
@@ -506,10 +706,39 @@ $deliveries = [];
                  distStr = `<span class="badge bg-secondary ms-2">${d.toFixed(1)} किमी दूर</span>`;
              }
 
+
+            let actionButtons = '';
+            if (item.today_status === 'Delivered') {
+                actionButtons = `
+                    <div class="alert alert-success py-2 px-3 mb-0 text-center small fw-bold">
+                        <i class="fa-solid fa-circle-check me-1"></i> आजची डिलिव्हरी पूर्ण झाली (Done)
+                    </div>
+                `;
+            } else {
+                actionButtons = `
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="startNavigation(${item.latitude}, ${item.longitude}, '${item.full_name.replace(/'/g, "\\'")}')">
+                           <i class="fa-solid fa-diamond-turn-right me-1"></i> मार्ग दाखवा (Navigate)
+                        </button>
+                        <button class="btn btn-success btn-sm" 
+                                onclick="startScan('${item.qr_code}', '${item.assignment_id || ''}', ${item.order_id})">
+                            <i class="fa-solid fa-qrcode me-1"></i> स्कॅन आणि डिलिव्हर
+                        </button>
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="completeDelivery('${item.assignment_id || ''}', ${item.order_id})">
+                            <i class="fa-solid fa-check me-1"></i> पोहोचवले (Delivered)
+                        </button>
+                    </div>
+                `;
+            }
+
+            const deliveryKey = item.assignment_id || `ord_${item.order_id}`;
+
             const html = `
                 <div class="col-md-6 col-lg-4 delivery-item" 
-                     data-id="${item.assignment_id}">
-                    <div class="card shadow-sm border-0 h-100">
+                     data-id="${deliveryKey}">
+                    <div class="card shadow-sm border-0 h-100 ${item.today_status === 'Delivered' ? 'opacity-75' : ''}">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
@@ -521,29 +750,18 @@ $deliveries = [];
                             
                             <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1"></i> ${item.address}</p>
                             
+                            ${item.today_status !== 'Delivered' ? `
                             <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded">
                                 <span class="small fw-bold">नगाची संख्या:</span>
                                 <div class="input-group input-group-sm" style="width: 100px;">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty(${item.assignment_id}, -1)">-</button>
-                                    <span class="form-control text-center fw-bold" id="qty_${item.assignment_id}">${item.quantity}</span>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty(${item.assignment_id}, 1)">+</button>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty('${deliveryKey}', -1)">-</button>
+                                    <span class="form-control text-center fw-bold" id="qty_${deliveryKey}">${item.quantity}</span>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty('${deliveryKey}', 1)">+</button>
                                 </div>
                             </div>
+                            ` : ''}
                             
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        onclick="startNavigation(${item.latitude}, ${item.longitude}, '${item.full_name.replace(/'/g, "\\'")}')">
-                                   <i class="fa-solid fa-diamond-turn-right me-1"></i> मार्ग दाखवा (Navigate)
-                                </button>
-                                <button class="btn btn-success btn-sm" 
-                                        onclick="startScan('${item.qr_code}', ${item.assignment_id})">
-                                    <i class="fa-solid fa-qrcode me-1"></i> स्कॅन आणि डिलिव्हर
-                                </button>
-                                <button class="btn btn-primary btn-sm" 
-                                        onclick="completeDelivery(${item.assignment_id})">
-                                    <i class="fa-solid fa-check me-1"></i> पोहोचवले (Delivered)
-                                </button>
-                            </div>
+                            ${actionButtons}
                         </div>
                     </div>
                 </div>
@@ -645,9 +863,10 @@ $deliveries = [];
     function deg2rad(deg) { return deg * (Math.PI/180); }
 
     // Scanner Functions
-    function startScan(targetQR, assignmentId) {
+    function startScan(targetQR, assignmentId, orderId = null) {
         currentTargetQR = targetQR;
         currentAssignmentId = assignmentId;
+        currentOrderId = orderId;
         const modal = new bootstrap.Modal(document.getElementById('scanModal'));
         modal.show();
         
@@ -659,8 +878,8 @@ $deliveries = [];
         });
     }
 
-    function updateQty(assignmentId, delta) {
-        const span = document.getElementById('qty_' + assignmentId);
+    function updateQty(key, delta) {
+        const span = document.getElementById('qty_' + key);
         let current = parseInt(span.innerText);
         current += delta;
         if (current < 1) current = 1;
@@ -673,7 +892,8 @@ $deliveries = [];
              const scanModal = bootstrap.Modal.getInstance(document.getElementById('scanModal'));
              if(scanModal) scanModal.hide();
              
-             document.getElementById('assignment_id').value = currentAssignmentId;
+             document.getElementById('assignment_id').value = currentAssignmentId || '';
+             document.getElementById('order_id_flow').value = currentOrderId || '';
              showCanReceivedModal();
         } else {
             Swal.fire({
@@ -685,8 +905,9 @@ $deliveries = [];
         }
     }
 
-    function completeDelivery(assignmentId) {
-        document.getElementById('assignment_id').value = assignmentId;
+    function completeDelivery(assignmentId, orderId = null) {
+        document.getElementById('assignment_id').value = assignmentId || '';
+        document.getElementById('order_id_flow').value = orderId || '';
         showCanReceivedModal();
     }
 
@@ -724,10 +945,13 @@ $deliveries = [];
         document.getElementById('can_received_input').value = status;
         
         const assignmentId = document.getElementById('assignment_id').value;
-        const qty = document.getElementById('qty_' + assignmentId).innerText;
+        const orderId = document.getElementById('order_id_flow').value;
+        const key = assignmentId || 'ord_' + orderId;
+        const qty = document.getElementById('qty_' + key).innerText;
 
         const fd = new FormData();
         fd.append('assignment_id', assignmentId);
+        fd.append('order_id', orderId);
         fd.append('can_received', status);
         fd.append('return_can_count', count);
         fd.append('quantity', qty);
@@ -1035,6 +1259,254 @@ $deliveries = [];
                 text: 'व्हॅन पाठवता आली नाही.'
             });
         });
+    }
+    // --- CUSTOMER MANAGEMENT LOGIC ---
+    let customerMap, customerMarker, custDebounceTimer;
+    let lastCustomerData = null;
+    let custSearchTimeout = null;
+
+    function loadCustomers(page = 1, isPoll = false) {
+        const search = document.getElementById('custSearchInput').value;
+        const tbody = document.getElementById('customerTableBody');
+        const pagination = document.getElementById('custPagination');
+        
+        if(!isPoll) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
+            lastCustomerData = null;
+        }
+
+        fetch(`api/users.php?action=fetch_all&page=${page}&search=${encodeURIComponent(search)}`)
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                const currentDataStr = JSON.stringify(res.data);
+                if (isPoll && lastCustomerData === currentDataStr) return;
+                lastCustomerData = currentDataStr;
+
+                tbody.innerHTML = '';
+                if(res.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ग्राहक सापडले नाहीत.</td></tr>';
+                    pagination.innerHTML = '';
+                    return;
+                }
+                
+                res.data.forEach((user) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded-circle text-center me-2 text-primary fw-bold" style="width: 30px; height: 30px; line-height: 30px; font-size: 0.8rem;">
+                                        ${user.full_name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-medium text-dark">${user.full_name}</span>
+                                        <small class="text-muted" style="font-size: 0.7rem;">${user.customer_type}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><small>${user.mobile}</small></td>
+                            <td><span class="badge border text-dark" style="font-size: 0.7rem;">${user.customer_type}</span></td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-white border" onclick="viewUser(${user.id})" title="QR Code"><i class="fa-solid fa-qrcode text-dark"></i></button>
+                                    <button class="btn btn-sm btn-white border" onclick="editUser(${user.id})" title="Edit"><i class="fa-solid fa-pen text-primary"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                pagination.innerHTML = '';
+                if(res.pagination.pages > 1) {
+                    for(let i = 1; i <= res.pagination.pages; i++) {
+                        const active = i === res.pagination.page ? 'active' : '';
+                        pagination.innerHTML += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="loadCustomers(${i})">${i}</a></li>`;
+                    }
+                }
+            }
+        });
+    }
+
+    document.getElementById('custSearchInput').addEventListener('keyup', function() {
+        clearTimeout(custSearchTimeout);
+        custSearchTimeout = setTimeout(() => loadCustomers(1), 500);
+    });
+
+    function openAddCustomerModal() {
+        document.getElementById('userForm').reset();
+        document.getElementById('formAction').value = 'create';
+        document.getElementById('userId').value = '';
+        document.getElementById('modalTitle').innerText = 'नवीन ग्राहक जोडा';
+        
+        const modal = new bootstrap.Modal(document.getElementById('userModal'));
+        modal.show();
+        
+        document.getElementById('userModal').addEventListener('shown.bs.modal', function () {
+            initCustomerMap();
+            detectCustomerLocation(true);
+        }, { once: true });
+    }
+
+    function initCustomerMap() {
+        if (customerMap) { customerMap.invalidateSize(); return; }
+        const defaultLat = 20.5937; 
+        const defaultLng = 78.9629; 
+
+        customerMap = L.map('customerMap').setView([defaultLat, defaultLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' }).addTo(customerMap);
+        customerMarker = L.marker([defaultLat, defaultLng], {draggable: true}).addTo(customerMap);
+
+        customerMap.on('click', function(e) { updateCustomerMarker(e.latlng.lat, e.latlng.lng); });
+        customerMarker.on('dragend', function(e) { const c = e.target.getLatLng(); updateCustomerMarker(c.lat, c.lng); });
+    }
+
+    function updateCustomerMarker(lat, lng) {
+        if(!customerMap || !customerMarker) return;
+        customerMarker.setLatLng([lat, lng]);
+        document.getElementById('latitude').value = parseFloat(lat).toFixed(6);
+        document.getElementById('longitude').value = parseFloat(lng).toFixed(6);
+
+        clearTimeout(custDebounceTimer);
+        document.getElementById('address').placeholder = "पत्ता मिळवत आहे...";
+        custDebounceTimer = setTimeout(() => fetchCustomerAddress(lat, lng), 1000);
+    }
+
+    function fetchCustomerAddress(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+            headers: { 'Accept-Language': 'en' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data && data.display_name) {
+                document.getElementById('address').value = data.display_name; 
+                const addr = data.address;
+                document.getElementById('city').value = addr.city || addr.town || addr.village || '';
+                document.getElementById('state').value = addr.state || '';
+                document.getElementById('pincode').value = addr.postcode || '';
+            }
+        });
+    }
+
+    function searchCustomerLocation() {
+        const q = document.getElementById('addressSearch').value;
+        if(!q) return;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
+        .then(r => r.json())
+        .then(data => {
+            if(data.length > 0) {
+                customerMap.setView([data[0].lat, data[0].lon], 16);
+                updateCustomerMarker(data[0].lat, data[0].lon);
+            }
+        });
+    }
+
+    function detectCustomerLocation(isAuto = false) {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(pos => {
+            if(customerMap) {
+                customerMap.setView([pos.coords.latitude, pos.coords.longitude], 18);
+                updateCustomerMarker(pos.coords.latitude, pos.coords.longitude);
+            }
+        }, err => {
+            if(!isAuto) Swal.fire({ icon: 'warning', title: 'Location Error', text: "Unable to retrieve your location" });
+        });
+    }
+
+    function submitUserForm() {
+        const form = document.getElementById('userForm');
+        if(!form.checkValidity()) { form.reportValidity(); return; }
+        const fd = new FormData(form);
+        fetch('api/users.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                loadCustomers();
+                Swal.fire({ icon: 'success', title: 'यशस्वी', text: res.message, timer: 2000, showConfirmButton: false });
+            } else {
+                Swal.fire({ icon: 'error', title: 'त्रुटी', text: res.message });
+            }
+        });
+    }
+
+    function editUser(id) {
+        fetch(`api/users.php?action=fetch_one&id=${id}`)
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                const u = res.data;
+                document.getElementById('userId').value = u.id;
+                document.getElementById('fullName').value = u.full_name;
+                document.getElementById('mobile').value = u.mobile;
+                document.getElementById('email').value = u.email;
+                document.getElementById('customerType').value = u.customer_type;
+                document.getElementById('address').value = u.address;
+                document.getElementById('city').value = u.city || '';
+                document.getElementById('state').value = u.state || '';
+                document.getElementById('pincode').value = u.pincode || '';
+                document.getElementById('latitude').value = u.latitude || '';
+                document.getElementById('longitude').value = u.longitude || '';
+                document.getElementById('status').value = u.status;
+                
+                document.getElementById('formAction').value = 'update';
+                document.getElementById('modalTitle').innerText = 'ग्राहक माहिती बदला';
+                
+                const modal = new bootstrap.Modal(document.getElementById('userModal'));
+                modal.show();
+
+                document.getElementById('userModal').addEventListener('shown.bs.modal', function () {
+                    initCustomerMap();
+                    if(u.latitude && u.longitude) {
+                        const lat = parseFloat(u.latitude);
+                        const lng = parseFloat(u.longitude);
+                        customerMap.setView([lat, lng], 16);
+                        customerMarker.setLatLng([lat, lng]);
+                    }
+                }, { once: true });
+            }
+        });
+    }
+
+    function viewUser(id) {
+        fetch(`api/users.php?action=fetch_one&id=${id}`)
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                const u = res.data;
+                document.getElementById('viewName').innerText = u.full_name;
+                document.getElementById('viewMobile').innerText = u.mobile;
+                document.getElementById('viewId').innerText = '#' + u.id;
+                document.getElementById('viewType').innerText = u.customer_type;
+                document.getElementById('viewAddress').innerText = u.address;
+                document.getElementById('viewAvatar').innerText = u.full_name.charAt(0).toUpperCase();
+                
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, { text: u.mobile, width: 128, height: 128 });
+                
+                new bootstrap.Modal(document.getElementById('viewUserModal')).show();
+            }
+        });
+    }
+
+    function downloadQR() {
+        const link = document.createElement('a');
+        const img = document.getElementById('qrcode').querySelector('img');
+        if(!img) return;
+        link.href = img.src;
+        link.download = `QR_${document.getElementById('viewName').innerText.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    function printQR() {
+        const img = document.getElementById('qrcode').querySelector('img');
+        if(!img) return;
+        const imgData = img.src;
+        const name = document.getElementById('viewName').innerText;
+        const id = document.getElementById('viewId').innerText;
+        const win = window.open('', '', 'height=600,width=600');
+        win.document.write(`<html><head><title>Print QR</title><style>body{font-family:sans-serif;text-align:center;padding:20px}.card{border:2px solid #333;padding:20px;display:inline-block;border-radius:10px}h2{margin:10px 0;color:#333}p{font-size:14px;color:#666;margin:0}img{margin-top:10px;max-width:100%;border:1px solid #eee}</style></head><body><div class="card"><h2>Sudha Jal Delivery</h2><p>Customer: <strong>${name}</strong></p><p>ID: <strong>${id}</strong></p><img src="${imgData}" width="200" /><p style="margin-top:10px">Scan to Deliver</p></div></body></html>`);
+        win.document.close(); win.print();
     }
 </script>
 </body>
