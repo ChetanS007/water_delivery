@@ -647,13 +647,14 @@ h6 {
 /* Modal Title Color Fix */
 .modal-header .modal-title,
 .modal-header h4, 
-.modal-header h5 {
-    color: #ffffff !important;
+.modal-header h5,
+.modal-header .btn-close {
+    color: rgba(var(--bs-primary-rgb), var(--bs-text-opacity)) !important;
 }
 
-/* Ensure close button is visible on dark headers */
+/* Reset close button filter so it's not forced to white */
 .modal-header .btn-close {
-    filter: brightness(0) invert(1);
+    filter: none;
 }
 
 .glass-card {

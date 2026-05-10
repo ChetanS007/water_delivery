@@ -368,9 +368,70 @@ try {
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">पासवर्ड</label>
-                        <input type="password" name="password" class="form-control rounded-pill px-3 bg-light border-0" placeholder="******" required>
+                        <div class="input-group">
+                            <input type="password" name="password" class="form-control bg-light border-0 px-3" style="border-top-left-radius: 50rem; border-bottom-left-radius: 50rem;" placeholder="******" required>
+                            <span class="input-group-text bg-light border-0 toggle-password" style="border-top-right-radius: 50rem; border-bottom-right-radius: 50rem; cursor: pointer;">
+                                <i class="fas fa-eye-slash text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-end mb-3">
+                         <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal" class="text-primary small fw-bold text-decoration-none">पासवर्ड विसरलात? (Forgot Password)</a>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">लॉगिन करा</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card p-4">
+            <div class="modal-header border-0">
+                <h5 class="text-primary modal-title fw-bold text-dark" id="fpModalTitle">पासवर्ड विसरलात?</h5>
+                <button type="button" class="text-primary btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="forgotPasswordForm">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">मोबाईल नंबर (Mobile Number)</label>
+                        <input type="text" id="fpMobile" name="mobile" class="form-control rounded-pill px-3 bg-light border-0" placeholder="१०-अंकी मोबाईल नंबर" required>
+                        <small id="fpMobileError" class="text-danger mt-1 ms-2 d-none fw-bold"></small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">पुढील (Next)</button>
+                </form>
+
+                <form id="verifyOtpForm" class="d-none">
+                    <p class="text-center mb-4">To reset your password, please enter this 4-digit verification code: <br><strong id="displayOtpCode" class="text-primary fs-3"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">४-अंकी कोड (4-Digit Code)</label>
+                        <input type="text" id="fpOtp" name="otp" class="form-control rounded-pill px-3 bg-light border-0" placeholder="****" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">पडताळणी करा (Verify)</button>
+                </form>
+
+                <form id="resetPasswordForm" class="d-none">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">नवीन पासवर्ड (New Password)</label>
+                        <div class="input-group">
+                            <input type="password" id="fpNewPassword" name="new_password" class="form-control bg-light border-0 px-3" style="border-top-left-radius: 50rem; border-bottom-left-radius: 50rem;" placeholder="******" required>
+                            <span class="input-group-text bg-light border-0 toggle-password" style="border-top-right-radius: 50rem; border-bottom-right-radius: 50rem; cursor: pointer;">
+                                <i class="fas fa-eye-slash text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">पासवर्डची पुष्टी करा (Confirm Password)</label>
+                        <div class="input-group">
+                            <input type="password" id="fpConfirmPassword" name="confirm_password" class="form-control bg-light border-0 px-3" style="border-top-left-radius: 50rem; border-bottom-left-radius: 50rem;" placeholder="******" required>
+                            <span class="input-group-text bg-light border-0 toggle-password" style="border-top-right-radius: 50rem; border-bottom-right-radius: 50rem; cursor: pointer;">
+                                <i class="fas fa-eye-slash text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">पासवर्ड बदला (Update Password)</button>
                 </form>
             </div>
         </div>
@@ -412,7 +473,12 @@ try {
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">पासवर्ड</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" required>
+                                <span class="input-group-text toggle-password" style="cursor: pointer;">
+                                    <i class="fas fa-eye-slash text-muted"></i>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -835,6 +901,152 @@ try {
         .finally(() => {
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'विनंती पाठवा';
+        });
+    });
+</script>
+
+<script>
+    // Forgot Password Flow
+    document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const mobile = document.getElementById('fpMobile').value;
+        const btn = this.querySelector('button');
+        const errorEl = document.getElementById('fpMobileError');
+        
+        btn.disabled = true;
+        btn.innerHTML = 'प्रक्रिया सुरू आहे...';
+        errorEl.classList.add('d-none');
+
+        const fd = new FormData();
+        fd.append('action', 'send_otp');
+        fd.append('mobile', mobile);
+
+        fetch('api/forgot_password.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                btn.innerHTML = 'पुढील (Next)';
+                if(res.success) {
+                    errorEl.classList.add('d-none');
+                    document.getElementById('displayOtpCode').innerText = res.otp;
+                    
+                    document.getElementById('forgotPasswordForm').classList.add('d-none');
+                    document.getElementById('verifyOtpForm').classList.remove('d-none');
+                    document.getElementById('fpModalTitle').innerText = 'OTP प्रविष्ट करा';
+                } else {
+                    errorEl.innerText = "Mobile number not available in system";
+                    errorEl.classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = 'पुढील (Next)';
+                Swal.fire('Error!', 'An unexpected error occurred.', 'error');
+            });
+    });
+
+    document.getElementById('verifyOtpForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const otp = document.getElementById('fpOtp').value;
+        const btn = this.querySelector('button');
+        btn.disabled = true;
+
+        const fd = new FormData();
+        fd.append('action', 'verify_otp');
+        fd.append('otp', otp);
+
+        fetch('api/forgot_password.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                if(res.success) {
+                    document.getElementById('verifyOtpForm').classList.add('d-none');
+                    document.getElementById('resetPasswordForm').classList.remove('d-none');
+                    document.getElementById('fpModalTitle').innerText = 'नवीन पासवर्ड';
+                } else {
+                    Swal.fire('Error!', 'Invalid verification code. Please try again.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = 'पडताळणी करा (Verify)';
+                Swal.fire('Error!', 'An unexpected error occurred.', 'error');
+            });
+    });
+
+    document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newPass = document.getElementById('fpNewPassword').value;
+        const confirmPass = document.getElementById('fpConfirmPassword').value;
+        const btn = this.querySelector('button');
+
+        if(newPass !== confirmPass) {
+            Swal.fire('चूक!', 'पासवर्ड जुळत नाहीत! (Passwords do not match)', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = 'प्रक्रिया सुरू आहे...';
+
+        const fd = new FormData();
+        fd.append('action', 'reset_password');
+        fd.append('new_password', newPass);
+
+        fetch('api/forgot_password.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                btn.innerHTML = 'पासवर्ड बदला (Update Password)';
+                if(res.success) {
+                    Swal.fire('यशस्वी!', res.message, 'success').then(() => {
+                        const fpModalEl = document.getElementById('forgotPasswordModal');
+                        const fpModal = bootstrap.Modal.getInstance(fpModalEl);
+                        if(fpModal) fpModal.hide();
+                        
+                        setTimeout(() => {
+                            const loginEl = document.getElementById('loginModal');
+                            const loginModal = bootstrap.Modal.getInstance(loginEl) || new bootstrap.Modal(loginEl);
+                            loginModal.show();
+                        }, 500);
+                    });
+                } else {
+                    Swal.fire('चूक!', res.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = 'पासवर्ड बदला (Update Password)';
+                Swal.fire('Error!', 'An unexpected error occurred.', 'error');
+            });
+    });
+
+    document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('forgotPasswordForm').reset();
+        document.getElementById('verifyOtpForm').reset();
+        document.getElementById('resetPasswordForm').reset();
+        document.getElementById('forgotPasswordForm').classList.remove('d-none');
+        document.getElementById('verifyOtpForm').classList.add('d-none');
+        document.getElementById('resetPasswordForm').classList.add('d-none');
+        document.getElementById('fpModalTitle').innerText = 'पासवर्ड विसरलात?';
+    });
+
+    // Toggle Password Visibility
+    document.querySelectorAll('.toggle-password').forEach(function(icon) {
+        icon.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            const i = this.querySelector('i');
+            if (input.type === "password") {
+                input.type = "text";
+                i.classList.remove('fa-eye-slash');
+                i.classList.add('fa-eye');
+            } else {
+                input.type = "password";
+                i.classList.remove('fa-eye');
+                i.classList.add('fa-eye-slash');
+            }
         });
     });
 </script>
