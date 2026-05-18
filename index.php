@@ -25,7 +25,7 @@ try {
                 <div class="d-flex gap-3">
                     <!-- <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#orderModal">आजच ऑर्डर करा</button> -->
                     <button class="btn btn-secondary shadow-lg icon-link-hover" onclick="window.location.href='#products'">बाटली खरेदी करा</button>
-                    <button class="btn btn-primary shadow-lg icon-link-hover" data-bs-toggle="modal" data-bs-target="#eventBookingModal">कार्यक्रमासाठी बुक करा</button>
+                    <button class="btn btn-primary shadow-lg icon-link-hover" onclick="openEventBookingModal()">कार्यक्रमासाठी बुक करा</button>
                 </div> 
             </div>
                       
@@ -283,7 +283,7 @@ try {
 
                 <div class="d-flex gap-3 mt-4">
                     <button class="btn btn-primary shadow icon-link-hover" onclick="window.location.href='#products'">आत्ताच ऑर्डर करा</button>
-                    <button class="btn btn-warning shadow icon-link-hover" data-bs-toggle="modal" data-bs-target="#eventBookingModal">कार्यक्रमासाठी बुक करा</button>
+                    <button class="btn btn-warning shadow icon-link-hover" onclick="openEventBookingModal()">कार्यक्रमासाठी बुक करा</button>
                     <!-- <button class="btn btn-secondary shadow icon-link-hover">विनामूल्य अंदाज</button> -->
                 </div>
             </div>
@@ -379,6 +379,10 @@ try {
                          <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal" class="text-primary small fw-bold text-decoration-none">पासवर्ड विसरलात? (Forgot Password)</a>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">लॉगिन करा</button>
+                    <div class="text-center mt-3">
+                        <span class="text-muted small">खाते नाही? (No account?) </span>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal" class="text-primary small fw-bold text-decoration-none">नोंदणी करा (Register)</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -391,7 +395,7 @@ try {
         <div class="modal-content glass-card p-4">
             <div class="modal-header border-0">
                 <h5 class="text-primary modal-title fw-bold text-dark" id="fpModalTitle">पासवर्ड विसरलात?</h5>
-                <button type="button" class="text-primary btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="forgotPasswordForm">
@@ -401,6 +405,9 @@ try {
                         <small id="fpMobileError" class="text-danger mt-1 ms-2 d-none fw-bold"></small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">पुढील (Next)</button>
+                    <div class="text-center mt-3">
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal" class="text-primary small fw-bold text-decoration-none"><i class="fas fa-arrow-left me-1"></i> लॉगिनवर परत जा (Back to Login)</a>
+                    </div>
                 </form>
 
                 <form id="verifyOtpForm" class="d-none">
@@ -493,7 +500,11 @@ try {
                         <small class="text-muted">अधिक अचूकतेसाठी स्थान प्रवेशाची (Location Access) परवानगी द्या.</small>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">नोंदणी करा</button>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow">नोंदणी करा</button>
+                    <div class="text-center mt-3">
+                        <span class="text-muted small">आधीपासून खाते आहे? (Already have an account?) </span>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal" class="text-primary small fw-bold text-decoration-none">लॉगिन करा (Login)</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -597,15 +608,7 @@ try {
     });
     document.querySelectorAll('.animate-on-scroll').forEach((el) => observer.observe(el));
 
-    // Order Modal Logic (Preserved)
-    function openOrderModal(id, name, price) {
-        document.getElementById('modal_product_id').value = id;
-        document.getElementById('modal_price').value = price;
-        document.getElementById('modal_product_name').innerText = name;
-        document.getElementById('orderQty').value = 1;
-        updateSummary();
-        new bootstrap.Modal(document.getElementById('orderModal')).show();
-    }
+    // Order Modal Logic (Preserved - Removed redundant definition)
 
     function updateSummary() {
         const price = parseFloat(document.getElementById('modal_price').value || 0);
@@ -750,7 +753,50 @@ try {
     }
 
     // Order Modal Logic
+    function openEventBookingModal() {
+        <?php if(!isset($_SESSION['user_id'])): ?>
+            Swal.fire({
+                title: 'लॉगिन आवश्यक आहे!',
+                text: "बुकिंग करण्यासाठी कृपया लॉगिन करा किंवा नवीन नोंदणी करा.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0E3A66',
+                cancelButtonColor: '#F9A826',
+                confirmButtonText: 'लॉगिन करा (Login)',
+                cancelButtonText: 'नवीन नोंदणी (Register)'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    new bootstrap.Modal(document.getElementById('loginModal')).show();
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    new bootstrap.Modal(document.getElementById('registerModal')).show();
+                }
+            });
+            return;
+        <?php endif; ?>
+        new bootstrap.Modal(document.getElementById('eventBookingModal')).show();
+    }
+
     function openOrderModal(id, name, price) {
+        <?php if(!isset($_SESSION['user_id'])): ?>
+            Swal.fire({
+                title: 'लॉगिन आवश्यक आहे!',
+                text: "ऑर्डर करण्यासाठी कृपया लॉगिन करा किंवा नवीन नोंदणी करा.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0E3A66',
+                cancelButtonColor: '#F9A826',
+                confirmButtonText: 'लॉगिन करा (Login)',
+                cancelButtonText: 'नवीन नोंदणी (Register)'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    new bootstrap.Modal(document.getElementById('loginModal')).show();
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    new bootstrap.Modal(document.getElementById('registerModal')).show();
+                }
+            });
+            return;
+        <?php endif; ?>
+
         document.getElementById('modal_product_id').value = id;
         document.getElementById('modal_price').value = price;
         document.getElementById('modal_product_name').innerText = name + " (₹" + price + ")";

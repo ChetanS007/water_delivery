@@ -4,10 +4,10 @@ $user = 'root';
 $pass = 'Chetan@123#'; // Default XAMPP password
 $db   = 'water_delivery';
 
-// $host = 'localhost';
-// $user = 'u479035143_water';
-// $pass = 'U479035143_water';  
-// $db   = 'u479035143_water';
+// $host = 'localhost'; 
+// $user = 'u322327110_water';
+// $pass = 'U322327110_water';  
+// $db   = 'u322327110_water';
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
